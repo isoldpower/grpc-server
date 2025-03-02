@@ -27,15 +27,18 @@ func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 	}
 }
 
-func (hs *HTTPServer) startServer(errorChannel chan<- error) {
+func (hs *HTTPServer) startServer() error {
 	serveAddress := fmt.Sprintf("%s:%d", hs.basicConfig.Host, hs.basicConfig.Port)
-	listener, _ := net.Listen("tcp", serveAddress)
+	listener, listenErr := net.Listen("tcp", serveAddress)
+	if listenErr != nil {
+		return listenErr
+	}
 
 	hs.listener = listener
 	log.Printf("Started HTTP server on http://%s\n", serveAddress)
 
 	serveError := http.Serve(listener, hs.router)
-	errorChannel <- serveError
+	return serveError
 }
 
 func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
@@ -48,10 +51,10 @@ func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
 func (hs *HTTPServer) Run(_ server.ServerRunConfig) <-chan error {
 	hs.router = http.NewServeMux()
 
-	serverAddress := fmt.Sprintf("%s:%d", hs.basicConfig.Host, hs.basicConfig.Port)
-	connection := NewGRPCClient(serverAddress)
+	interruptChannel := make(chan error)
 
-	hs.router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	connection := NewGRPCClient("localhost:3081")
+	hs.router.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
 		client := orders.NewOrderServiceClient(connection)
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -62,6 +65,7 @@ func (hs *HTTPServer) Run(_ server.ServerRunConfig) <-chan error {
 		})
 
 		if err != nil {
+			cancel()
 			log.Fatalf("client error: %v\n", err)
 		}
 
@@ -69,11 +73,12 @@ func (hs *HTTPServer) Run(_ server.ServerRunConfig) <-chan error {
 		cancel()
 	})
 
-	errorChannel := make(chan error)
-	go hs.startServer(errorChannel)
-	go hs.listenForErrors(errorChannel)
+	startError := hs.startServer()
+	if startError != nil {
+		interruptChannel <- startError
+	}
 
-	return errorChannel
+	return interruptChannel
 }
 
 func (hs *HTTPServer) Stop() error {

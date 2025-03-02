@@ -1,6 +1,7 @@
 package main
 
 import (
+	"golang-grpc/internal/server"
 	"google.golang.org/grpc"
 	"log"
 )
@@ -15,5 +16,14 @@ func NewGRPCClient(addr string) *grpc.ClientConn {
 }
 
 func main() {
+	var httpServer server.Server = NewHTTPServer(&httpServerConfig{
+		ServerConfig: server.ServerConfig{
+			Port: 8000,
+			Host: "localhost",
+		},
+	})
 
+	httpServer.Run(server.ServerRunConfig{
+		ReturnOnError: false,
+	})
 }
