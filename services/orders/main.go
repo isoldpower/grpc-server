@@ -28,12 +28,12 @@ func main() {
 
 	select {
 	case err := <-grpcError:
-		log.Println("Error occurred while listening at the gRPC connection")
-		log.Println(err.Error())
+		fmt.Println("Error occurred while listening at the gRPC connection")
+		fmt.Println(err.Error())
 		break
 	case err := <-httpError:
-		log.Println("Error occurred while listening at the HTTP connection")
-		log.Println(err.Error())
+		fmt.Println("Error occurred while listening at the HTTP connection")
+		fmt.Println(err.Error())
 		break
 	}
 }

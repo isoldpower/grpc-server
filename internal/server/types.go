@@ -1,7 +1,6 @@
 package server
 
 type ServerRunConfig struct {
-	ReturnOnError bool
 }
 
 type ServerConfig struct {
@@ -10,6 +9,6 @@ type ServerConfig struct {
 }
 
 type Server interface {
-	Run(ServerRunConfig) <-chan error
+	Run(ServerRunConfig) error
 	Stop() error
 }

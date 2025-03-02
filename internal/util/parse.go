@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -21,7 +22,7 @@ func WriteError(writer http.ResponseWriter, statusCode int, err error) {
 	writer.Header().Set("Content-Type", "application/json")
 	_, writingError := writer.Write(json.RawMessage(`{"message":"` + err.Error() + `"}`))
 	if writingError != nil {
-		log.Println("Failed to marshal the error message json")
+		fmt.Println("Failed to marshal the error message json")
 		log.Fatalf("\t%v\n", writingError)
 	}
 }
@@ -32,12 +33,12 @@ func WriteResponse(writer http.ResponseWriter, statusCode int, result interface{
 	response, err := json.Marshal(result)
 
 	if err != nil {
-		log.Println("Failed to marshal the response json")
+		fmt.Println("Failed to marshal the response json")
 		return err
 	}
 	_, writingError := writer.Write(response)
 	if writingError != nil {
-		log.Println("Failed to marshal the response json")
+		fmt.Println("Failed to marshal the response json")
 		return err
 	}
 

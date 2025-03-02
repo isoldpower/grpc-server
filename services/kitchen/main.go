@@ -2,18 +2,8 @@ package main
 
 import (
 	"golang-grpc/internal/server"
-	"google.golang.org/grpc"
 	"log"
 )
-
-func NewGRPCClient(addr string) *grpc.ClientConn {
-	conn, err := grpc.NewClient(addr, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("failed to connect to grpc server: %v", err)
-	}
-
-	return conn
-}
 
 func main() {
 	var httpServer server.Server = NewHTTPServer(&httpServerConfig{
@@ -23,7 +13,8 @@ func main() {
 		},
 	})
 
-	httpServer.Run(server.ServerRunConfig{
-		ReturnOnError: false,
-	})
+	err := httpServer.Run(server.ServerRunConfig{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }

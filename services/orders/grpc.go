@@ -36,9 +36,9 @@ func (s *GRPCServer) listenServer(errorChannel chan<- error) {
 	)
 	if tcpError != nil {
 		errorChannel <- tcpError
-		log.Printf("failed to listen: %v\n", tcpError)
+		fmt.Printf("failed to listen: %v\n", tcpError)
 	} else {
-		log.Printf("Started gRPC server on tcp://%s\n", listenAddress)
+		fmt.Printf("Started gRPC server on tcp://%s\n", listenAddress)
 	}
 
 	s.server = grpc.NewServer()

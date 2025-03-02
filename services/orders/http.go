@@ -31,7 +31,7 @@ func (hs *HTTPServer) startServer(errorChannel chan<- error) {
 	listener, _ := net.Listen("tcp", serveAddress)
 
 	hs.listener = listener
-	log.Printf("Started HTTP server on http://%s\n", serveAddress)
+	fmt.Printf("Started HTTP server on http://%s\n", serveAddress)
 
 	serveError := http.Serve(listener, hs.router)
 	errorChannel <- serveError
@@ -39,8 +39,8 @@ func (hs *HTTPServer) startServer(errorChannel chan<- error) {
 
 func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
 	for err := range errorChannel {
-		log.Println("Error occurred while listening for errors: ")
-		log.Println("\t", err)
+		fmt.Println("Error occurred while listening for errors: ")
+		fmt.Println("\t", err)
 	}
 }
 
@@ -61,8 +61,8 @@ func (hs *HTTPServer) Run(_ server.ServerRunConfig) <-chan error {
 func (hs *HTTPServer) Stop() error {
 	err := hs.listener.Close()
 	if err != nil {
-		log.Println("Error occurred while closing the HTTP connection")
-		log.Println(err.Error())
+		fmt.Println("Error occurred while closing the HTTP connection")
+		fmt.Println(err.Error())
 	}
 
 	return err

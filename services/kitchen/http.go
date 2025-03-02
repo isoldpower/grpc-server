@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"golang-grpc/internal/server"
-	"golang-grpc/services/common/genproto/orders"
-	"log"
+	"golang-grpc/services/kitchen/handler"
 	"net"
 	"net/http"
-	"time"
 )
 
 type httpServerConfig struct {
@@ -19,74 +16,39 @@ type HTTPServer struct {
 	basicConfig *httpServerConfig
 	router      *http.ServeMux
 	listener    net.Listener
+	server      *server.HTTPServer
 }
 
 func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 	return &HTTPServer{
 		basicConfig: basicConfig,
+		server: server.NewHTTPServer(&server.HttpServerConfig{
+			Network:      "tcp",
+			ServerConfig: basicConfig.ServerConfig,
+		}),
 	}
 }
 
-func (hs *HTTPServer) startServer() error {
-	serveAddress := fmt.Sprintf("%s:%d", hs.basicConfig.Host, hs.basicConfig.Port)
-	listener, listenErr := net.Listen("tcp", serveAddress)
-	if listenErr != nil {
-		return listenErr
-	}
-
-	hs.listener = listener
-	log.Printf("Started HTTP server on http://%s\n", serveAddress)
-
-	serveError := http.Serve(listener, hs.router)
-	return serveError
+func (hs *HTTPServer) registerRoutes() {
+	hs.server.AddRoute("POST /", handler.CreateOrderHandler)
 }
 
-func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
-	for err := range errorChannel {
-		log.Println("Error occurred while listening for errors: ")
-		log.Println("\t", err)
-	}
-}
+func (hs *HTTPServer) Run(_ server.ServerRunConfig) error {
+	hs.registerRoutes()
+	err := hs.server.Run()
 
-func (hs *HTTPServer) Run(_ server.ServerRunConfig) <-chan error {
-	hs.router = http.NewServeMux()
-
-	interruptChannel := make(chan error)
-
-	connection := NewGRPCClient("localhost:3081")
-	hs.router.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
-		client := orders.NewOrderServiceClient(connection)
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		response, err := client.CreateOrder(ctx, &orders.CreateOrderRequest{
-			CustomerID: 24,
-			ProductID:  1,
-			Quantity:   1,
-		})
-
-		if err != nil {
-			cancel()
-			log.Fatalf("client error: %v\n", err)
+	go func() {
+		doneChannel := hs.server.GetDoneChannel()
+		if <-doneChannel {
+			fmt.Println("HTTP server shut down...")
+		} else {
+			fmt.Println("HTTP server forced to shut.")
 		}
+	}()
 
-		log.Printf("CreateOrderResponse: %v\n", response)
-		cancel()
-	})
-
-	startError := hs.startServer()
-	if startError != nil {
-		interruptChannel <- startError
-	}
-
-	return interruptChannel
+	return err
 }
 
 func (hs *HTTPServer) Stop() error {
-	err := hs.listener.Close()
-	if err != nil {
-		log.Println("Error occurred while closing the HTTP connection")
-		log.Println(err.Error())
-	}
-
-	return err
+	return hs.server.Stop()
 }

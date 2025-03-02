@@ -4,6 +4,7 @@ option go_package = "golang-grpc/common/orders";
 
 service OrderService {
   rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse) {}
+  rpc GetOrdersList (GetOrdersRequest) returns (GetOrderResponse) {}
 }
 
 message Order {
