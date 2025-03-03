@@ -13,8 +13,11 @@ func main() {
 		},
 	})
 
-	err := httpServer.Run(server.ServerRunConfig{})
+	defer httpServer.Stop()
+	err := httpServer.Run(server.ServerRunConfig{
+		WithGracefulShutdown: true,
+	})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fatal(err)
 	}
 }

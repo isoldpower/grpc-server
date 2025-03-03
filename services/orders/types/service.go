@@ -13,7 +13,3 @@ type OrdersHandlerType struct {
 	OrdersService OrderService
 	orders.UnimplementedOrderServiceServer
 }
-
-type OrderHandler interface {
-	CreateOrder(context.Context, *orders.CreateOrderRequest) (*orders.CreateOrderResponse, error)
-}

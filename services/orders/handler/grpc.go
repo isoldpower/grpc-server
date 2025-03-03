@@ -11,6 +11,7 @@ type OrdersGrpcHandler struct {
 	types.OrdersHandlerType
 }
 
+// NewGrpcOrdersHandler registers new grpc handler to specified grpc server
 func NewGrpcOrdersHandler(server *grpc.Server, orderService types.OrderService) {
 	gRPCHandler := &OrdersGrpcHandler{
 		OrdersHandlerType: types.OrdersHandlerType{
@@ -21,9 +22,10 @@ func NewGrpcOrdersHandler(server *grpc.Server, orderService types.OrderService) 
 	orders.RegisterOrderServiceServer(server, gRPCHandler)
 }
 
+// CreateOrder writes new order to local storage from grpc request
 func (h *OrdersGrpcHandler) CreateOrder(
 	context context.Context,
-	request *orders.CreateOrderRequest,
+	_ *orders.CreateOrderRequest,
 ) (*orders.CreateOrderResponse, error) {
 	order := &orders.Order{
 		OrderID:    52,

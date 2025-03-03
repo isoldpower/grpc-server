@@ -33,9 +33,9 @@ func (hs *HTTPServer) registerRoutes() {
 	hs.server.AddRoute("POST /", handler.CreateOrderHandler)
 }
 
-func (hs *HTTPServer) Run(_ server.ServerRunConfig) error {
+func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
 	hs.registerRoutes()
-	err := hs.server.Run()
+	err := hs.server.Run(config)
 
 	go func() {
 		doneChannel := hs.server.GetDoneChannel()
@@ -47,6 +47,10 @@ func (hs *HTTPServer) Run(_ server.ServerRunConfig) error {
 	}()
 
 	return err
+}
+
+func (hs *HTTPServer) GetDoneChannel() <-chan bool {
+	return hs.server.GetDoneChannel()
 }
 
 func (hs *HTTPServer) Stop() error {

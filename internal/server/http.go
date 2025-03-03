@@ -11,18 +11,18 @@ import (
 	"time"
 )
 
-type NetworkType string
+type HttpNetworkType string
 
 const (
-	NetworkTypeTCP         NetworkType = "tcp"
-	NetworkTypeTCP4        NetworkType = "tcp4"
-	NetworkTypeTCP6        NetworkType = "tcp6"
-	NetworkTypeUnix        NetworkType = "unix"
-	NetworkTypeUnixNetwork NetworkType = "unixpacket"
+	NetworkTypeTCP         HttpNetworkType = "tcp"
+	NetworkTypeTCP4        HttpNetworkType = "tcp4"
+	NetworkTypeTCP6        HttpNetworkType = "tcp6"
+	NetworkTypeUnix        HttpNetworkType = "unix"
+	NetworkTypeUnixNetwork HttpNetworkType = "unixpacket"
 )
 
 type HttpServerConfig struct {
-	Network NetworkType
+	Network HttpNetworkType
 	ServerConfig
 }
 
@@ -32,16 +32,6 @@ type HTTPServer struct {
 	listener    net.Listener
 	server      *http.Server
 	doneChannel chan bool
-}
-
-func createListener(host string, port int, network NetworkType) (net.Listener, error) {
-	serveAddress := fmt.Sprintf("%s:%d", host, port)
-	listener, listenErr := net.Listen(string(network), serveAddress)
-	if listenErr != nil {
-		return listener, listenErr
-	}
-
-	return listener, nil
 }
 
 func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
@@ -62,7 +52,7 @@ func NewHTTPServer(basicConfig *HttpServerConfig) *HTTPServer {
 	listener, err := createListener(basicConfig.Host, basicConfig.Port, basicConfig.Network)
 	if err != nil {
 		fmt.Printf("Failed to create listener: %v\n", err)
-		doneChannel <- true
+		doneChannel <- false
 	}
 
 	return &HTTPServer{
@@ -83,10 +73,18 @@ func (hs *HTTPServer) trackGracefulShutdown() {
 	// Track for shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	<-ctx.Done()
+
+	select {
+	case <-hs.doneChannel:
+		fmt.Println("Internal server shutdown signal received")
+		break
+	case <-ctx.Done():
+		fmt.Println("Shutting down gRPC server gracefully")
+		fmt.Println("\t ↳ Press Ctrl+C again to force")
+		break
+	}
 
 	// Shut the server down in 5 seconds
-	fmt.Println("\nShutting down gracefully, press Ctrl+C again to force")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -118,7 +116,7 @@ func (hs *HTTPServer) AddRoute(
 
 // Run bootstrap the configured server and tracks whether
 // the server was shut by user
-func (hs *HTTPServer) Run() error {
+func (hs *HTTPServer) Run(config ServerRunConfig) error {
 	address := fmt.Sprintf("%s:%d", hs.basicConfig.Host, hs.basicConfig.Port)
 	hs.server = &http.Server{
 		Addr:    address,
@@ -127,24 +125,25 @@ func (hs *HTTPServer) Run() error {
 
 	fmt.Printf("🔥 Listening at http://%s\n", address)
 	go hs.serveRouter()
-	go hs.trackGracefulShutdown()
+	if config.WithGracefulShutdown {
+		go hs.trackGracefulShutdown()
+	}
 
 	if <-hs.doneChannel {
 		fmt.Println("🟢 Graceful shutdown complete.")
+		hs.doneChannel <- true
 	} else {
 		fmt.Println("❌ Exited with problems.")
+		hs.doneChannel <- false
 	}
 
 	return nil
 }
 
+// Stop closes the server listener and sends the signal to the
+// done channel that the server is closed
 func (hs *HTTPServer) Stop() error {
-	err := hs.server.Close()
+	hs.doneChannel <- true
 
-	if err != nil {
-		fmt.Println("Error occurred while closing the HTTP server connection")
-		fmt.Println(err.Error())
-	}
-
-	return err
+	return nil
 }

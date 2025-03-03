@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"golang-grpc/internal/server"
 	"golang-grpc/internal/util"
 	"golang-grpc/services/common/genproto/orders"
 	"golang-grpc/services/orders/types"
@@ -10,16 +11,6 @@ import (
 
 type OrdersHttpHandler struct {
 	types.OrdersHandlerType
-}
-
-func NewHttpOrdersHandler(orderService types.OrderService) *OrdersHttpHandler {
-	httpHandler := &OrdersHttpHandler{
-		OrdersHandlerType: types.OrdersHandlerType{
-			OrdersService: orderService,
-		},
-	}
-
-	return httpHandler
 }
 
 func (oh *OrdersHttpHandler) tryCreateOrder(
@@ -43,10 +34,26 @@ func (oh *OrdersHttpHandler) tryCreateOrder(
 	return true, order
 }
 
-func (oh *OrdersHttpHandler) RegisterRouter(router *http.ServeMux) {
-	router.HandleFunc("POST /orders", oh.CreateOrder)
+// NewHttpOrdersHandler creates an instance of OrdersHttpHandler object
+// with specific predefined values to ensure safe usage and runtime
+func NewHttpOrdersHandler(orderService types.OrderService) *OrdersHttpHandler {
+	httpHandler := &OrdersHttpHandler{
+		OrdersHandlerType: types.OrdersHandlerType{
+			OrdersService: orderService,
+		},
+	}
+
+	return httpHandler
 }
 
+// GetRoutes returns a list of HTTP routes related to the handler.
+func (oh *OrdersHttpHandler) GetRoutes() []*server.ServerRoute {
+	return []*server.ServerRoute{
+		{Pattern: "POST /orders", Handler: oh.CreateOrder},
+	}
+}
+
+// CreateOrder writes new order to local storage
 func (oh *OrdersHttpHandler) CreateOrder(
 	writer http.ResponseWriter,
 	request *http.Request,

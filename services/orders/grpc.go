@@ -6,59 +6,50 @@ import (
 	"golang-grpc/services/orders/handler"
 	"golang-grpc/services/orders/service"
 	"google.golang.org/grpc"
-	"log"
-	"net"
 )
 
 type GRPCServer struct {
 	basicConfig *gRPCServerConfig
-	server      *grpc.Server
+	server      *server.GRPCServer
 }
 
 type gRPCServerConfig struct {
 	server.ServerConfig
 }
 
-func NewGRPCServer(defaultConfig *gRPCServerConfig) *GRPCServer {
-	return &GRPCServer{basicConfig: defaultConfig}
-}
-
 func (s *GRPCServer) registerServices() {
-	orderService := service.NewOrderService()
-	handler.NewGrpcOrdersHandler(s.server, orderService)
+	s.server.AddServiceRegistrar(func(passed *grpc.Server) {
+		handler.NewGrpcOrdersHandler(passed, service.NewOrderService())
+	})
 }
 
-func (s *GRPCServer) listenServer(errorChannel chan<- error) {
-	listenAddress := fmt.Sprintf("%s:%d", s.basicConfig.Host, s.basicConfig.Port)
-	tcpListener, tcpError := net.Listen(
-		"tcp",
-		listenAddress,
-	)
-	if tcpError != nil {
-		errorChannel <- tcpError
-		fmt.Printf("failed to listen: %v\n", tcpError)
-	} else {
-		fmt.Printf("Started gRPC server on tcp://%s\n", listenAddress)
+// NewGRPCServer creates new GRPCServer instance with basic settings applied.
+// By default, it applies the list of handlers, creates server and saves config
+func NewGRPCServer(defaultConfig *gRPCServerConfig) *GRPCServer {
+	return &GRPCServer{
+		basicConfig: defaultConfig,
+		server: server.NewGRPCServer(&server.GrpcServerConfig{
+			ServerConfig: defaultConfig.ServerConfig,
+		}),
 	}
+}
 
-	s.server = grpc.NewServer()
+// GetDoneChannel returns the boolean read-only channel with done signal.
+// The transferred signal is true when the server shut down successfully and false when with errors
+func (s *GRPCServer) GetDoneChannel() <-chan bool {
+	return s.GetDoneChannel()
+}
+
+// Run starts the server to listen and handle at specific port.
+// Returns possible server run process error
+func (s *GRPCServer) Run(config server.ServerRunConfig) error {
+	fmt.Println("🔄 Running gRPC server...")
 	s.registerServices()
 
-	serveError := s.server.Serve(tcpListener)
-	if serveError != nil {
-		errorChannel <- serveError
-	}
+	return s.server.Run(config)
 }
 
-func (s *GRPCServer) Run(_ server.ServerRunConfig) <-chan error {
-	errorChannel := make(chan error)
-
-	go s.listenServer(errorChannel)
-
-	return errorChannel
-}
-
+// Stop shuts down the server gracefully
 func (s *GRPCServer) Stop() error {
-	s.server.GracefulStop()
-	return nil
+	return s.server.Stop()
 }

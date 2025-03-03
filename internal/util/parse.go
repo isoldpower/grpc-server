@@ -3,7 +3,6 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -23,7 +22,7 @@ func WriteError(writer http.ResponseWriter, statusCode int, err error) {
 	_, writingError := writer.Write(json.RawMessage(`{"message":"` + err.Error() + `"}`))
 	if writingError != nil {
 		fmt.Println("Failed to marshal the error message json")
-		log.Fatalf("\t%v\n", writingError)
+		fmt.Printf("\t%v\n", writingError)
 	}
 }
 

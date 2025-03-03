@@ -5,7 +5,6 @@ import (
 	"golang-grpc/internal/server"
 	"golang-grpc/services/orders/handler"
 	"golang-grpc/services/orders/service"
-	"log"
 	"net"
 	"net/http"
 )
@@ -17,47 +16,48 @@ type httpServerConfig struct {
 type HTTPServer struct {
 	basicConfig *httpServerConfig
 	router      *http.ServeMux
+	server      *server.HTTPServer
+	handlers    []*handler.OrdersHttpHandler
 	listener    net.Listener
 }
 
+func (hs *HTTPServer) registerRoutes() {
+	for _, serverHandler := range hs.handlers {
+		handlerRoutes := serverHandler.GetRoutes()
+		for _, route := range handlerRoutes {
+			hs.server.AddRoute(route.Pattern, route.Handler)
+		}
+	}
+}
+
+// NewHTTPServer creates new HTTPServer instance with basic settings applied.
+// By default, it applies the list of handlers, creates server and saves config
 func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 	return &HTTPServer{
 		basicConfig: basicConfig,
+		handlers: []*handler.OrdersHttpHandler{
+			handler.NewHttpOrdersHandler(service.NewOrderService()),
+		},
+		server: server.NewHTTPServer(&server.HttpServerConfig{
+			ServerConfig: basicConfig.ServerConfig,
+		}),
 	}
 }
 
-func (hs *HTTPServer) startServer(errorChannel chan<- error) {
-	serveAddress := fmt.Sprintf("%s:%d", hs.basicConfig.Host, hs.basicConfig.Port)
-	listener, _ := net.Listen("tcp", serveAddress)
-
-	hs.listener = listener
-	fmt.Printf("Started HTTP server on http://%s\n", serveAddress)
-
-	serveError := http.Serve(listener, hs.router)
-	errorChannel <- serveError
+// Run bootstraps the orders HTTP server with desired logging
+func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
+	fmt.Println("🔄 Running HTTP server...")
+	hs.registerRoutes()
+	return hs.server.Run(config)
 }
 
-func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
-	for err := range errorChannel {
-		fmt.Println("Error occurred while listening for errors: ")
-		fmt.Println("\t", err)
-	}
+// GetDoneChannel returns the channel with done signal.
+// Signal is true if the server finished successfully and false if server finished with error
+func (hs *HTTPServer) GetDoneChannel() <-chan bool {
+	return hs.server.GetDoneChannel()
 }
 
-func (hs *HTTPServer) Run(_ server.ServerRunConfig) <-chan error {
-	errorChannel := make(chan error)
-	hs.router = http.NewServeMux()
-
-	orderService := service.NewOrderService()
-	orderHandler := handler.NewHttpOrdersHandler(orderService)
-	orderHandler.RegisterRouter(hs.router)
-
-	go hs.startServer(errorChannel)
-	go hs.listenForErrors(errorChannel)
-
-	return errorChannel
-}
-
+// Stop gracefully closes the connection to the server
 func (hs *HTTPServer) Stop() error {
 	err := hs.listener.Close()
 	if err != nil {
