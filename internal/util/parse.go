@@ -38,7 +38,7 @@ func WriteResponse(writer http.ResponseWriter, statusCode int, result interface{
 	_, writingError := writer.Write(response)
 	if writingError != nil {
 		fmt.Println("Failed to marshal the response json")
-		return err
+		fmt.Printf("\t%v\n", writingError)
 	}
 
 	return nil

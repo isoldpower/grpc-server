@@ -16,9 +16,15 @@ func NewOrderService() *OrderService {
 var orders = make([]*ordersCommon.Order, 0)
 
 func (s *OrderService) CreateOrder(
-	context context.Context,
+	_ context.Context,
 	order *ordersCommon.Order,
 ) error {
 	orders = append(orders, order)
 	return nil
+}
+
+func (s *OrderService) GetOrdersList(
+	_ context.Context,
+) ([]*ordersCommon.Order, error) {
+	return orders, nil
 }

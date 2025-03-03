@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"golang-grpc/internal/server"
-	"log"
 )
 
 func main() {
@@ -18,6 +18,6 @@ func main() {
 		WithGracefulShutdown: true,
 	})
 	if err != nil {
-		fmt.Fatal(err)
+		fmt.Printf("%v\n", err)
 	}
 }

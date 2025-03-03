@@ -16,12 +16,14 @@ type HTTPServer struct {
 	basicConfig *httpServerConfig
 	router      *http.ServeMux
 	listener    net.Listener
+	handler     *handler.OrdersHttpHandler
 	server      *server.HTTPServer
 }
 
 func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 	return &HTTPServer{
 		basicConfig: basicConfig,
+		handler:     handler.NewOrdersHttpHandler(),
 		server: server.NewHTTPServer(&server.HttpServerConfig{
 			Network:      "tcp",
 			ServerConfig: basicConfig.ServerConfig,
@@ -30,7 +32,8 @@ func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 }
 
 func (hs *HTTPServer) registerRoutes() {
-	hs.server.AddRoute("POST /", handler.CreateOrderHandler)
+	hs.server.AddRoute("POST /", hs.handler.CreateOrder)
+	hs.server.AddRoute("GET /", hs.handler.GetOrders)
 }
 
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {

@@ -45,3 +45,18 @@ func (h *OrdersGrpcHandler) CreateOrder(
 
 	return response, nil
 }
+
+func (h *OrdersGrpcHandler) GetOrdersList(
+	context context.Context,
+	_ *orders.GetOrdersRequest,
+) (*orders.GetOrdersResponse, error) {
+	retrievedOrders, retrieveError := h.OrdersService.GetOrdersList(context)
+	if retrieveError != nil {
+		return nil, retrieveError
+	}
+
+	response := &orders.GetOrdersResponse{
+		Orders: retrievedOrders,
+	}
+	return response, nil
+}

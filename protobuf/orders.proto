@@ -4,7 +4,7 @@ option go_package = "golang-grpc/common/orders";
 
 service OrderService {
   rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse) {}
-  rpc GetOrdersList (GetOrdersRequest) returns (GetOrderResponse) {}
+  rpc GetOrdersList (GetOrdersRequest) returns (GetOrdersResponse) {}
 }
 
 message Order {
@@ -33,6 +33,6 @@ message GetOrdersRequest {
   int32 customerID = 1;
 }
 
-message GetOrderResponse {
+message GetOrdersResponse {
   repeated Order orders = 1;
 }
