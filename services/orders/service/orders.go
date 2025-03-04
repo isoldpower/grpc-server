@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	ordersCommon "golang-grpc/services/common/genproto/orders"
+	"golang-grpc/services/common/genproto/orders"
 )
 
 type OrderService struct {
@@ -13,18 +13,18 @@ func NewOrderService() *OrderService {
 }
 
 // TODO: Replace with database
-var orders = make([]*ordersCommon.Order, 0)
+var ordersStorage = make([]*orders.Order, 0)
 
 func (s *OrderService) CreateOrder(
 	_ context.Context,
-	order *ordersCommon.Order,
+	order *orders.Order,
 ) error {
-	orders = append(orders, order)
+	ordersStorage = append(ordersStorage, order)
 	return nil
 }
 
 func (s *OrderService) GetOrdersList(
 	_ context.Context,
-) ([]*ordersCommon.Order, error) {
-	return orders, nil
+) ([]*orders.Order, error) {
+	return ordersStorage, nil
 }
