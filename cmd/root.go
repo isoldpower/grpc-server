@@ -1,32 +1,42 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
+	"golang-grpc/cmd/config"
 	"golang-grpc/cmd/run"
 	"os"
 )
 
 var (
-	rootCommand = &cobra.Command{
+	rootConfigPath string
+	rootConfig     *config.RootConfig = config.NewRootConfig()
+	rootCommand                       = &cobra.Command{
 		Use:     "power",
 		Version: "1.0.0",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			//TODO: try resolve running context and running root config (i.e. Logger configuration)
-			return nil
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			configErr := rootConfig.TryReadConfig(rootConfigPath)
+			if configErr != nil {
+				return configErr
+			}
+
+			return rootConfig.ResolveArgsAndFlags(cmd.Flags(), args)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			//TODO: output help for the commands
-			fmt.Println("Executed root command")
+			value, _ := json.MarshalIndent(rootConfig, "", "  ")
+			fmt.Printf("Executed root command. Resolved config: %s\n", value)
 		},
 	}
 )
 
 func init() {
+	rootConfig.AttachFlagsToCommand(rootCommand)
+
 	rootCommand.AddCommand(run.GetCommand())
 }
 
-// Execute as an entry-point function to start the CLI interactions
+// Execute is an entry-point function to start the CLI interactions
 func Execute() {
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
