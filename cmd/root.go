@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"golang-grpc/cmd/config"
-	"golang-grpc/cmd/model"
+	"golang-grpc/cmd/kitchen"
 	"golang-grpc/cmd/orders"
+	"golang-grpc/cmd/types"
 	"os"
 )
 
@@ -42,9 +43,10 @@ func NewCommand() *RootCommand {
 func init() {
 	currentCommand.rootConfig.RegisterFlags(currentCommand.commandInstance)
 
-	subcommands := []model.SubCommand{
+	subcommands := []types.SubCommand{
 		NewRunCommand(currentCommand.rootConfig),
 		orders.NewRootCommand(currentCommand.rootConfig),
+		kitchen.NewRootCommand(currentCommand.rootConfig),
 	}
 
 	for _, subcommand := range subcommands {

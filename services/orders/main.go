@@ -2,6 +2,7 @@ package orders
 
 import (
 	"golang-grpc/internal/server"
+	"golang-grpc/services/orders/store"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 	})
 )
 
-func StartOrdersService() {
+func StartOrdersService(config *store.InitialConfig) {
 	runList := []server.Server{grpcServer, httpServer}
 	waitServers := server.RunServersInParallel(runList, server.ServerRunConfig{
 		WithGracefulShutdown: true,

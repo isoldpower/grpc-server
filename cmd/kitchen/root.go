@@ -1,32 +1,57 @@
 package kitchen
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/spf13/cobra"
 	"golang-grpc/cmd/config"
+	"golang-grpc/cmd/types"
+	"golang-grpc/internal/util"
 )
 
-var (
-	rootCommand = &cobra.Command{
-		Use:   "kitchen",
-		Short: "Kitchen Microservice CLI",
-		Long:  `Kitchen Microservice CLI. Root command outputs help`,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return nil
+type RootCommand struct {
+	kitchenConfig   *KitchenConfig
+	commandInstance *cobra.Command
+}
+
+func NewRootCommand(rootConfig *config.RootConfig) *RootCommand {
+	commandConfig := NewKitchenConfig(rootConfig)
+
+	return &RootCommand{
+		kitchenConfig: commandConfig,
+		commandInstance: &cobra.Command{
+			Use:   "kitchen",
+			Short: "Kitchen microservice",
+			Long:  "Kitchen microservice-specific CLI for controlling Kitchen microservice.\nRoot command outputs help by default",
+			PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+				return util.ProtectedAction(cmd.Root().PersistentPreRunE(cmd, args), func() error {
+					return commandConfig.TryResolveConfig("")
+				})
+			},
+			PreRunE: func(cmd *cobra.Command, args []string) error {
+				return util.ProtectedAction(cmd.Root().PreRunE(cmd, args), func() error {
+					return commandConfig.ResolveFlagsAndArgs(cmd.Flags(), args)
+				})
+			},
+			Run: func(cmd *cobra.Command, args []string) {
+				value, _ := json.MarshalIndent(commandConfig, "", "  ")
+				fmt.Printf("Executed kitchen command. Resolved config: %s\n", value)
+			},
 		},
 	}
-)
-
-type Command struct {
-	rootConfig *config.RootConfig
-	config     *KitchenConfig
 }
 
-func NewKitchenCommand(rootConfig *config.RootConfig) *Command {
-	return &Command{
-		rootConfig: rootConfig,
+func (rc *RootCommand) Register(parentCmd *cobra.Command) {
+	rc.kitchenConfig.RegisterFlags(rc.commandInstance)
+
+	subCommands := []types.SubCommand{
+		NewRunCommand(rc.kitchenConfig),
+		NewMigrateCommand(rc.kitchenConfig),
 	}
-}
 
-func (c *Command) Register(parentCmd *cobra.Command) {
+	for _, subCommand := range subCommands {
+		subCommand.Register(rc.commandInstance)
+	}
 
+	parentCmd.AddCommand(rc.commandInstance)
 }

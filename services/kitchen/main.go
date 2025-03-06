@@ -3,9 +3,10 @@ package kitchen
 import (
 	"fmt"
 	"golang-grpc/internal/server"
+	"golang-grpc/services/kitchen/store"
 )
 
-func StartKitchenService() {
+func StartKitchenService(config *store.InitialConfig) {
 	var httpServer server.Server = NewHTTPServer(&httpServerConfig{
 		ServerConfig: server.ServerConfig{
 			Port: 8000,

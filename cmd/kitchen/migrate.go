@@ -1,18 +1,37 @@
 package kitchen
 
-import "github.com/spf13/cobra"
-
-var (
-	migrateCommand = &cobra.Command{
-		Use:   "migrate",
-		Short: "Run migrations process for kitchen databases",
-		Long:  `This command relates to Kitchen Microservice CLI. It runs the further CLI process for resolving all configuration files and running all sorts of flexible migrations on developer's choice'.`,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return nil
-		},
-	}
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/spf13/cobra"
+	"golang-grpc/internal/util"
 )
 
-func init() {
+type MigrateCommand struct {
+	config          *KitchenConfig
+	commandInstance *cobra.Command
+}
 
+func NewMigrateCommand(config *KitchenConfig) *MigrateCommand {
+	return &MigrateCommand{
+		config: config,
+		commandInstance: &cobra.Command{
+			Use:   "migrate",
+			Short: "Migrate Kitchen microservice",
+			Long:  "Run further CLI process of migrating all Kitchen services",
+			PreRunE: func(cmd *cobra.Command, args []string) error {
+				return util.ProtectedAction(cmd.Parent().PreRunE(cmd, args), func() error {
+					return nil
+				})
+			},
+			Run: func(cmd *cobra.Command, args []string) {
+				value, _ := json.MarshalIndent(config, "", "  ")
+				fmt.Printf("Executed migrate kitchen command. Resolved config: %s\n", value)
+			},
+		},
+	}
+}
+
+func (rc *MigrateCommand) Register(parentCmd *cobra.Command) {
+	parentCmd.AddCommand(rc.commandInstance)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"golang-grpc/cmd/config"
+	"golang-grpc/services/orders/store"
 	"path/filepath"
 )
 
@@ -15,29 +16,30 @@ const (
 	ConfigKey     configKey = "orders-config"
 )
 
-type ordersConfig struct {
-	Root *config.RootConfig
-	Test string
+type OrdersConfig struct {
+	store *store.InitialConfig
 
 	serviceConfig string
 	viperInstance *viper.Viper
 }
 
-func newOrdersConfig(rootConfig *config.RootConfig) *ordersConfig {
-	return &ordersConfig{
-		Root: rootConfig,
-		Test: "default",
-
+func NewOrdersConfig(rootConfig *config.RootConfig) *OrdersConfig {
+	return &OrdersConfig{
+		store: &store.InitialConfig{
+			Root: rootConfig,
+			Test: "default",
+		},
 		serviceConfig: filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
 		viperInstance: viper.New(),
 	}
 }
 
-func (oc *ordersConfig) RegisterFlags(cmd *cobra.Command) {
+func (oc *OrdersConfig) RegisterFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&oc.serviceConfig, string(ConfigKey), oc.serviceConfig, "change service-specific config path")
+	cmd.PersistentFlags().StringVar(&oc.store.Test, string(TestConfigKey), oc.store.Test, "")
 }
 
-func (oc *ordersConfig) TryResolveConfig(_ string) error {
+func (oc *OrdersConfig) TryResolveConfig(_ string) error {
 	config.ResolveViper(oc.viperInstance, oc.serviceConfig)
 	err := config.TryResolveConfig(oc.viperInstance)
 	if err != nil {
@@ -47,9 +49,10 @@ func (oc *ordersConfig) TryResolveConfig(_ string) error {
 	return nil
 }
 
-func (oc *ordersConfig) ResolveFlagsAndArgs(flags *pflag.FlagSet, _ []string) error {
+func (oc *OrdersConfig) ResolveFlagsAndArgs(flags *pflag.FlagSet, _ []string) error {
 	var resolver config.ParamReader = config.NewDualReader(oc.viperInstance, flags)
-	oc.Test = resolver.SafeGetString(string(TestConfigKey), oc.Test)
+
+	oc.store.Test = resolver.SafeGetString(string(TestConfigKey), oc.store.Test)
 
 	return nil
 }

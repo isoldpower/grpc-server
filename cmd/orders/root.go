@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"golang-grpc/cmd/config"
-	"golang-grpc/cmd/model"
+	"golang-grpc/cmd/types"
 	"golang-grpc/internal/util"
 )
 
 type RootCommand struct {
-	ordersConfig    *ordersConfig
+	ordersConfig    *OrdersConfig
 	commandInstance *cobra.Command
 }
 
 func NewRootCommand(rootConfig *config.RootConfig) *RootCommand {
-	commandConfig := newOrdersConfig(rootConfig)
+	commandConfig := NewOrdersConfig(rootConfig)
 
 	return &RootCommand{
 		ordersConfig: commandConfig,
@@ -44,7 +44,7 @@ func NewRootCommand(rootConfig *config.RootConfig) *RootCommand {
 func (rc *RootCommand) Register(parentCmd *cobra.Command) {
 	rc.ordersConfig.RegisterFlags(rc.commandInstance)
 
-	subCommands := []model.SubCommand{
+	subCommands := []types.SubCommand{
 		NewRunCommand(rc.ordersConfig),
 		NewMigrateCommand(rc.ordersConfig),
 	}

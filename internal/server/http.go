@@ -79,7 +79,7 @@ func (hs *HTTPServer) trackGracefulShutdown() {
 		fmt.Println("Internal server shutdown signal received")
 		break
 	case <-ctx.Done():
-		fmt.Println("Shutting down gRPC server gracefully")
+		fmt.Println("Shutting down HTTP server gracefully")
 		fmt.Println("\t ↳ Press Ctrl+C again to force")
 		break
 	}

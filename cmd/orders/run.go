@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"golang-grpc/internal/util"
+	"golang-grpc/services/orders"
 )
 
 type RunCommand struct {
-	config          *ordersConfig
+	config          *OrdersConfig
 	commandInstance *cobra.Command
 }
 
-func NewRunCommand(ordersConfig *ordersConfig) *RunCommand {
+func NewRunCommand(ordersConfig *OrdersConfig) *RunCommand {
 	return &RunCommand{
 		config: ordersConfig,
 		commandInstance: &cobra.Command{
@@ -25,8 +26,10 @@ func NewRunCommand(ordersConfig *ordersConfig) *RunCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				value, _ := json.MarshalIndent(ordersConfig, "", "  ")
+				value, _ := json.MarshalIndent(ordersConfig.store, "", "  ")
 				fmt.Printf("Executed run orders command. Resolved config: %s\n", value)
+
+				orders.StartOrdersService(ordersConfig.store)
 			},
 		},
 	}

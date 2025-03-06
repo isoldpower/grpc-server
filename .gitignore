@@ -8,3 +8,4 @@
 
 # configuration and private files
 **/*config.yaml
+.env

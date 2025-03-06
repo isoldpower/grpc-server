@@ -7,18 +7,15 @@ import (
 )
 
 type RunCommand struct {
-	rootConfig      *config.RootConfig
 	commandInstance *cobra.Command
 }
 
 func NewRunCommand(rootConfig *config.RootConfig) *RunCommand {
 	return &RunCommand{
-		rootConfig: rootConfig,
 		commandInstance: &cobra.Command{
 			Use:   "run",
-			Short: "Run the microservice",
+			Short: "Run all microservices in correct order",
 			PreRunE: func(cmd *cobra.Command, args []string) error {
-				//TODO: resolve the configuration here
 				return nil
 			},
 			Run: func(cmd *cobra.Command, args []string) {
