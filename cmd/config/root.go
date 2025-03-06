@@ -9,8 +9,6 @@ import (
 
 type RootConfigKey string
 
-const ()
-
 type RootConfig struct {
 	Cli           *CliConfig
 	Context       *ProcessContext
@@ -28,20 +26,20 @@ func NewRootConfig() *RootConfig {
 	}
 }
 
-func (cc *RootConfig) AttachFlagsToCommand(cmd *cobra.Command) {
-	cc.Cli.AttachFlagsToCommand(cmd)
+func (cc *RootConfig) RegisterFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&cc.configPath, "config", "./root_config.yaml", "config file path")
 
-	cmd.Flags().StringVar(&cc.configPath, "config", "./root_config.yaml", "config file path")
+	cc.Cli.RegisterFlags(cmd)
 }
 
-func (cc *RootConfig) ResolveArgsAndFlags(flagSet *pflag.FlagSet, args []string) error {
+func (cc *RootConfig) ResolveFlagsAndArgs(flagSet *pflag.FlagSet, args []string) error {
 	contextError := cc.Context.ResolveProcessContext(args)
 	if contextError != nil {
 		fmt.Printf("Failed to resolve process context: %v\n", contextError)
 		return contextError
 	}
 
-	cliError := cc.Cli.ResolveArgsAndFlags(flagSet, args)
+	cliError := cc.Cli.ResolveFlagsAndArgs(flagSet, args)
 	if cliError != nil {
 		fmt.Printf("Failed to resolve CLI args and flags: %v\n", cliError)
 		return cliError
@@ -50,7 +48,7 @@ func (cc *RootConfig) ResolveArgsAndFlags(flagSet *pflag.FlagSet, args []string)
 	return nil
 }
 
-func (cc *RootConfig) TryReadConfig(_ string) error {
+func (cc *RootConfig) TryResolveConfig(_ string) error {
 	cliError := cc.Cli.TryReadConfig(cc.configPath)
 	if cliError != nil {
 		fmt.Printf("Failed to read config: %v\n", cliError)

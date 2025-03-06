@@ -1,3 +1,10 @@
+# IDE cache files
 .idea/
+.vscode/
 .DS_Store
+
+# gRPC files generated
 **/*.pb.*
+
+# configuration and private files
+**/*config.yaml

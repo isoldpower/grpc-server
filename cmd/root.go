@@ -5,41 +5,59 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"golang-grpc/cmd/config"
-	"golang-grpc/cmd/run"
+	"golang-grpc/cmd/model"
+	"golang-grpc/cmd/orders"
 	"os"
 )
 
-var (
-	rootConfigPath string
-	rootConfig     *config.RootConfig = config.NewRootConfig()
-	rootCommand                       = &cobra.Command{
-		Use:     "power",
-		Version: "1.0.0",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			configErr := rootConfig.TryReadConfig(rootConfigPath)
-			if configErr != nil {
-				return configErr
-			}
+type RootCommand struct {
+	rootConfig      *config.RootConfig
+	commandInstance *cobra.Command
+}
 
-			return rootConfig.ResolveArgsAndFlags(cmd.Flags(), args)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-			value, _ := json.MarshalIndent(rootConfig, "", "  ")
-			fmt.Printf("Executed root command. Resolved config: %s\n", value)
+var currentCommand = NewCommand()
+
+func NewCommand() *RootCommand {
+	rootConfig := config.NewRootConfig()
+
+	return &RootCommand{
+		rootConfig: rootConfig,
+		commandInstance: &cobra.Command{
+			Use:     "power",
+			Version: "1.0.0",
+			PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+				return rootConfig.TryResolveConfig("")
+			},
+			PreRunE: func(cmd *cobra.Command, args []string) error {
+				return rootConfig.ResolveFlagsAndArgs(cmd.Flags(), args)
+			},
+			Run: func(cmd *cobra.Command, args []string) {
+				value, _ := json.MarshalIndent(rootConfig, "", "  ")
+				fmt.Printf("Executed root command. Resolved config: %s\n", value)
+			},
 		},
 	}
-)
+}
 
 func init() {
-	rootConfig.AttachFlagsToCommand(rootCommand)
+	currentCommand.rootConfig.RegisterFlags(currentCommand.commandInstance)
 
-	rootCommand.AddCommand(run.GetCommand())
+	subcommands := []model.SubCommand{
+		NewRunCommand(currentCommand.rootConfig),
+		orders.NewRootCommand(currentCommand.rootConfig),
+	}
+
+	for _, subcommand := range subcommands {
+		subcommand.Register(currentCommand.commandInstance)
+	}
 }
 
 // Execute is an entry-point function to start the CLI interactions
-func Execute() {
-	if err := rootCommand.Execute(); err != nil {
+func (c *RootCommand) Execute() error {
+	if err := currentCommand.commandInstance.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
+
+	return nil
 }

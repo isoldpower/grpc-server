@@ -6,7 +6,12 @@ import (
 )
 
 type CommandConfig interface {
-	AttachFlagsToCommand(cmd *cobra.Command)
-	TryReadConfig(path string) error
-	ResolveArgsAndFlags(flags *pflag.FlagSet, args []string) error
+	RegisterFlags(cmd *cobra.Command)
+	TryResolveConfig(path string) error
+	ResolveFlagsAndArgs(flagSet *pflag.FlagSet, args []string) error
+}
+
+type ParamReader interface {
+	SafeGetString(key string, current string) string
+	SafeGetBool(key string, current bool) bool
 }

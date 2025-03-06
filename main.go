@@ -1,7 +1,13 @@
 package main
 
-import "golang-grpc/cmd"
+import (
+	"golang-grpc/cmd"
+	"os"
+)
 
 func main() {
-	cmd.Execute()
+	cliRoot := cmd.NewCommand()
+	if err := cliRoot.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
