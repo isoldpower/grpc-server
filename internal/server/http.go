@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"net"
 	"net/http"
@@ -52,9 +53,9 @@ func (hs *HTTPServer) trackGracefulShutdown() {
 		log.Infoln("Internal server shutdown signal received")
 		break
 	case <-ctx.Done():
-		log.Processln("Shutting down HTTP server gracefully")
+		log.Processln("Shutting down %s server gracefully", color.Blue("HTTP"))
 		log.RaiseLog(func() {
-			log.Logln("%s Press Ctrl+C again to force", log.GetIcon(log.AttentionIcon))
+			log.Logln("%s Press %s again to force", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
 		})
 		break
 	}
@@ -144,7 +145,7 @@ func (hs *HTTPServer) Run(config ServerRunConfig) error {
 	}
 
 	if <-hs.doneChannel {
-		log.Successln("Graceful shutdown complete (HTTP).")
+		log.Successln("Graceful shutdown complete %s.", color.Blue("(HTTP)"))
 		hs.doneChannel <- true
 	} else {
 		log.Errorln("Exited with problems.")

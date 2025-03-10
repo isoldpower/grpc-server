@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"google.golang.org/grpc"
 	"net"
@@ -33,9 +34,9 @@ func (gs *GRPCServer) trackGracefulShutdown() {
 		log.Infoln("Internal server shutdown signal received")
 		return
 	case <-ctx.Done():
-		log.Processln("Shutting down gRPC server gracefully")
+		log.Processln("Shutting down %s server gracefully", color.Green("gRPC"))
 		log.RaiseLog(func() {
-			log.Logln("%s Press Ctrl+C again to force", log.GetIcon(log.AttentionIcon))
+			log.Logln("%s Press %s again to force", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
 		})
 		break
 	}
@@ -112,7 +113,7 @@ func (gs *GRPCServer) Run(config ServerRunConfig) error {
 	}
 
 	if <-gs.doneChannel {
-		log.Successln("Graceful shutdown complete (gRPC).")
+		log.Successln("Graceful shutdown complete %s.", color.Green("(gRPC)"))
 		gs.doneChannel <- true
 	} else {
 		log.Errorln("Exited with problems.")

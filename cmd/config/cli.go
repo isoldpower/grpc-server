@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 )
 
@@ -15,6 +16,7 @@ const (
 	SilentCliConfigKey      CliConfigKey = "silent"
 	SkipClarifyCliConfigKey CliConfigKey = "skip-clarify"
 	NoIconsCliConfigKey     CliConfigKey = "no-icons"
+	NoColorsCliConfigKey    CliConfigKey = "no-colors"
 )
 
 type CliConfig struct {
@@ -22,6 +24,7 @@ type CliConfig struct {
 	Debug       bool
 	NoIcons     bool
 	SkipClarify bool
+	NoColors    bool
 
 	viperInstance *viper.Viper
 }
@@ -30,6 +33,8 @@ func (cc *CliConfig) applyValues() {
 	log.SwitchDebug(cc.Debug)
 	log.SwitchSilent(cc.Silent)
 	log.SwitchIcons(!cc.NoIcons)
+
+	color.SetEnabled(!cc.NoColors)
 }
 
 func NewCliConfig(viperInstance *viper.Viper) *CliConfig {
@@ -38,6 +43,7 @@ func NewCliConfig(viperInstance *viper.Viper) *CliConfig {
 		Silent:        false,
 		Debug:         false,
 		SkipClarify:   false,
+		NoColors:      false,
 	}
 
 	return cliConfig
@@ -48,6 +54,7 @@ func (cc *CliConfig) RegisterFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVar(&cc.Debug, string(DebugCliConfigKey), cc.Debug, "increase the amount of output information and print debug information")
 	cmd.PersistentFlags().BoolVar(&cc.NoIcons, string(NoIconsCliConfigKey), cc.NoIcons, "exclude prefix icons from the logging")
 	cmd.PersistentFlags().BoolVar(&cc.SkipClarify, string(SkipClarifyCliConfigKey), cc.SkipClarify, "automatically accept all 'yes/no' questions")
+	cmd.PersistentFlags().BoolVar(&cc.NoColors, string(NoColorsCliConfigKey), cc.NoColors, "disable colorful output for CLI")
 }
 
 func (cc *CliConfig) ResolveFlagsAndArgs(flags *pflag.FlagSet, _ []string) error {
@@ -57,6 +64,7 @@ func (cc *CliConfig) ResolveFlagsAndArgs(flags *pflag.FlagSet, _ []string) error
 	cc.Silent = resolver.SafeGetBool(string(SilentCliConfigKey), cc.Silent)
 	cc.SkipClarify = resolver.SafeGetBool(string(SkipClarifyCliConfigKey), cc.SkipClarify)
 	cc.NoIcons = resolver.SafeGetBool(string(NoIconsCliConfigKey), cc.NoIcons)
+	cc.NoColors = resolver.SafeGetBool(string(NoColorsCliConfigKey), cc.NoColors)
 
 	cc.applyValues()
 

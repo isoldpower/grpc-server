@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/server"
 	"golang-grpc/services/orders/handler"
@@ -48,7 +49,7 @@ func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
 	log.Processln("Running %s Orders HTTP server...", log.GetIcon(log.BoxIcon))
 	log.RaiseLog(func() {
-		log.Logln("%s Press Ctrl+C to exit", log.GetIcon(log.AttentionIcon))
+		log.Logln("%s Press %s to exit", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
 	})
 
 	hs.registerRoutes()
