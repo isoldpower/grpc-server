@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"golang-grpc/internal/log"
 	"strconv"
 	"time"
 )
@@ -27,7 +28,7 @@ func (s *service) Health() map[string]string {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("DB down: %v", err)
 
-		fmt.Printf("DB down: %v\n", err)
+		log.PrintError("Database is down", err)
 		return stats
 	}
 
@@ -70,6 +71,6 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	fmt.Printf("Disconnected from database: %s\n", s.settings.Database)
+	log.Successln("Disconnected from database: %s\n", s.settings.Database)
 	return s.db.Close()
 }

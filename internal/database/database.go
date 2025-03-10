@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"golang-grpc/internal/database/types"
+	"golang-grpc/internal/log"
 	"strconv"
 
 	_ "github.com/lib/pq"
@@ -48,7 +49,7 @@ func (db *Database) Instantiate() types.Service {
 
 	databaseConnection, err := sql.Open("postgres", connStr)
 	if err != nil {
-		fmt.Printf("Error occurred: %v\n", err)
+		log.PrintError(fmt.Sprintf("Can't connect to the database at %s", connStr), err)
 	}
 
 	db.Database = databaseConnection

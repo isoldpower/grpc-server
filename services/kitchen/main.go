@@ -1,7 +1,7 @@
 package kitchen
 
 import (
-	"fmt"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/server"
 	"golang-grpc/services/kitchen/store"
 )
@@ -39,7 +39,7 @@ func (ks *KitchenService) Execute(ready chan<- bool) <-chan bool {
 		})
 
 		if err != nil {
-			fmt.Printf("%v\n", err)
+			log.PrintError("Error occurred while running HTTP server", err)
 		}
 	}()
 

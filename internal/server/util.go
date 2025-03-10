@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"golang-grpc/internal/log"
 	"net"
 	"sync"
 )
@@ -26,7 +27,7 @@ func RunServersInParallel(servers []Server, runConfig ServerRunConfig) *sync.Wai
 			runError := server.Run(runConfig)
 
 			if runError != nil {
-				fmt.Printf("Failed to serve the http server: %v\n", runError)
+				log.PrintError("Failed to serve the http server", runError)
 				panic(runError)
 			}
 		}()

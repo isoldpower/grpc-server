@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
 	"golang-grpc/cmd/config"
 	"golang-grpc/cmd/kitchen"
 	"golang-grpc/cmd/orders"
 	"golang-grpc/cmd/types"
+	"golang-grpc/internal/log"
 	"os"
 )
 
@@ -33,8 +33,8 @@ func NewCommand() *RootCommand {
 				return rootConfig.ResolveFlagsAndArgs(cmd.Flags(), args)
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				value, _ := json.MarshalIndent(rootConfig, "", "  ")
-				fmt.Printf("Executed root command. Resolved config: %s\n", value)
+				log.Infoln("Executed root command")
+				log.Debugln("Resolved config: %s\n", log.GetObjectPattern(rootConfig))
 			},
 		},
 	}
@@ -57,7 +57,8 @@ func init() {
 // Execute is an entry-point function to start the CLI interactions
 func (c *RootCommand) Execute() error {
 	if err := currentCommand.commandInstance.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, err := fmt.Fprintln(os.Stderr, err)
+		log.Errorln(err.Error())
 		return err
 	}
 

@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"golang-grpc/cmd/config"
 	kitchenCmd "golang-grpc/cmd/kitchen"
 	ordersCmd "golang-grpc/cmd/orders"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 	"golang-grpc/services/common/types"
 	"golang-grpc/services/kitchen"
@@ -27,12 +27,15 @@ func (rc *RunCommand) runServicesInOrder(globalDone chan bool) {
 	iterator := 0
 	for key, service := range rc.services {
 		go func() {
-			fmt.Printf("📦👉 Running %s service\n", key)
+			log.Infoln("Running %s service", key)
+			log.IncreaseLevel()
 			doneChannels[iterator] = service.Execute(ready)
 		}()
 		<-ready
+		log.DecreaseLevel()
 		iterator++
 	}
+	log.Logln("\n")
 
 	finalStream := util.FlatStreams(globalDone, doneChannels...)
 	select {
@@ -83,6 +86,10 @@ func NewRunCommand(rootConfig *config.RootConfig) *RunCommand {
 			})
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			log.Infoln("Executed run-all command")
+			log.Debugln("Resolved kitchen config: %s", log.GetObjectPattern(kitchenConfig.Store))
+			log.Debugln("Resolved orders config: %s", log.GetObjectPattern(ordersConfig.Store))
+
 			done := make(chan bool)
 			command.runServicesInOrder(done)
 		},

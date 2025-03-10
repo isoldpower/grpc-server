@@ -1,10 +1,10 @@
 package config
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"golang-grpc/internal/log"
 )
 
 type RootConfigKey string
@@ -35,13 +35,13 @@ func (cc *RootConfig) RegisterFlags(cmd *cobra.Command) {
 func (cc *RootConfig) ResolveFlagsAndArgs(flagSet *pflag.FlagSet, args []string) error {
 	contextError := cc.Context.ResolveProcessContext(args)
 	if contextError != nil {
-		fmt.Printf("Failed to resolve process context: %v\n", contextError)
+		log.PrintError("Failed to resolve process context", contextError)
 		return contextError
 	}
 
 	cliError := cc.Cli.ResolveFlagsAndArgs(flagSet, args)
 	if cliError != nil {
-		fmt.Printf("Failed to resolve CLI args and flags: %v\n", cliError)
+		log.PrintError("Failed to resolve CLI args and flags", cliError)
 		return cliError
 	}
 
@@ -51,7 +51,7 @@ func (cc *RootConfig) ResolveFlagsAndArgs(flagSet *pflag.FlagSet, args []string)
 func (cc *RootConfig) TryResolveConfig(_ string) error {
 	cliError := cc.Cli.TryReadConfig(cc.configPath)
 	if cliError != nil {
-		fmt.Printf("Failed to read config: %v\n", cliError)
+		log.PrintError("Failed to read config", cliError)
 		return cliError
 	}
 

@@ -1,9 +1,8 @@
 package orders
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/spf13/cobra"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 )
 
@@ -25,8 +24,8 @@ func NewMigrateCommand(config *Config) *MigrateCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				value, _ := json.MarshalIndent(config, "", "  ")
-				fmt.Printf("Executed migrate orders command. Resolved config: %s\n", value)
+				log.Infoln("Executed migrate orders command")
+				log.Debugln("Resolved orders config: %s", log.GetObjectPattern(config.Store))
 			},
 		},
 	}

@@ -1,9 +1,8 @@
 package kitchen
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/spf13/cobra"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 	"golang-grpc/services/kitchen"
 )
@@ -26,8 +25,8 @@ func NewRunCommand(kitchenConfig *Config) *RunCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				value, _ := json.MarshalIndent(kitchenConfig.Store, "", "  ")
-				fmt.Printf("Executed run kitchen command. Resolved config: %s\n", value)
+				log.Infoln("Executed migrate kitchen command")
+				log.Debugln("Resolved kitchen config: %s", log.GetObjectPattern(kitchenConfig.Store))
 
 				ready := make(chan bool, 1)
 				service := kitchen.NewKitchenService(kitchenConfig.Store)

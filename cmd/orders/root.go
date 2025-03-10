@@ -1,11 +1,10 @@
 package orders
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/spf13/cobra"
 	"golang-grpc/cmd/config"
 	"golang-grpc/cmd/types"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 )
 
@@ -34,8 +33,8 @@ func NewRootCommand(rootConfig *config.RootConfig) *RootCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				value, _ := json.MarshalIndent(commandConfig, "", "  ")
-				fmt.Printf("Executed orders command. Resolved config: %s\n", value)
+				log.Infoln("Executed root orders command")
+				log.Debugln("Resolved orders config: %s", log.GetObjectPattern(commandConfig.Store))
 				cmd.HelpFunc()(cmd, args)
 			},
 		},

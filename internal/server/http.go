@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang-grpc/internal/log"
 	"net"
 	"net/http"
 	"os/signal"
@@ -37,8 +38,7 @@ type HTTPServer struct {
 
 func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
 	for err := range errorChannel {
-		fmt.Println("Error occurred while listening for errors: ")
-		fmt.Println("\t", err)
+		log.PrintError("Error occurred while listening for errors", err)
 	}
 }
 
@@ -49,11 +49,13 @@ func (hs *HTTPServer) trackGracefulShutdown() {
 
 	select {
 	case <-hs.doneChannel:
-		fmt.Println("Internal server shutdown signal received")
+		log.Infoln("Internal server shutdown signal received")
 		break
 	case <-ctx.Done():
-		fmt.Println("Shutting down HTTP server gracefully")
-		fmt.Println("\t ↳ Press Ctrl+C again to force")
+		log.Processln("Shutting down HTTP server gracefully")
+		log.RaiseLog(func() {
+			log.Logln("%s Press Ctrl+C again to force", log.GetIcon(log.AttentionIcon))
+		})
 		break
 	}
 
@@ -63,7 +65,7 @@ func (hs *HTTPServer) trackGracefulShutdown() {
 
 	// Handle force shutdown
 	if err := hs.server.Shutdown(ctx); err != nil {
-		fmt.Printf("Server forced to shutdown with error: %v", err)
+		log.PrintError("Server forced to shutdown with error", err)
 		hs.doneChannel <- false
 	}
 
@@ -76,7 +78,7 @@ func (hs *HTTPServer) serveRouter() {
 	err := hs.server.Serve(hs.listener)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		hs.doneChannel <- false
-		fmt.Println("Error occurred while serving: ", err)
+		log.PrintError("Error occurred while serving HTTP listener", err)
 	}
 }
 
@@ -90,7 +92,7 @@ func NewHTTPServer(basicConfig *HttpServerConfig) *HTTPServer {
 	doneChannel := make(chan bool, 1)
 	listener, err := createListener(basicConfig.Host, basicConfig.Port, basicConfig.Network)
 	if err != nil {
-		fmt.Printf("Failed to create listener: %v\n", err)
+		log.PrintError("Failed to create HTTP listener", err)
 		doneChannel <- false
 	}
 
@@ -133,7 +135,7 @@ func (hs *HTTPServer) Run(config ServerRunConfig) error {
 	}
 
 	if !config.Silent {
-		fmt.Printf("🔥 Listening at http://%s\n", address)
+		log.Processln("Listening at http://%s\n", address)
 	}
 	go hs.serveRouter()
 
@@ -142,10 +144,10 @@ func (hs *HTTPServer) Run(config ServerRunConfig) error {
 	}
 
 	if <-hs.doneChannel {
-		fmt.Println("🟢 Graceful shutdown complete.")
+		log.Successln("Graceful shutdown complete (HTTP).")
 		hs.doneChannel <- true
 	} else {
-		fmt.Println("❌ Exited with problems.")
+		log.Errorln("Exited with problems.")
 		hs.doneChannel <- false
 	}
 

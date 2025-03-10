@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"golang-grpc/internal/log"
 	"golang-grpc/services/common/genproto/orders"
 	"google.golang.org/grpc"
 	"time"
@@ -15,7 +16,10 @@ type OrderService struct {
 func createGrpcConnection(address string) *grpc.ClientConn {
 	grpcConnection, err := grpc.NewClient(address, grpc.WithInsecure())
 	if err != nil {
-		fmt.Printf("failed to connect to grpc server: %v\n", err)
+		log.PrintError(
+			fmt.Sprintf("Failed to connect to grpc server at: %s", address),
+			err,
+		)
 	}
 
 	return grpcConnection

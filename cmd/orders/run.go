@@ -1,9 +1,8 @@
 package orders
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/spf13/cobra"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 	"golang-grpc/services/orders"
 )
@@ -26,8 +25,8 @@ func NewRunCommand(ordersConfig *Config) *RunCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				value, _ := json.MarshalIndent(ordersConfig.Store, "", "  ")
-				fmt.Printf("Executed run orders command. Resolved config: %s\n", value)
+				log.Infoln("Executed run orders command")
+				log.Debugln("Resolved orders config: %s", log.GetObjectPattern(ordersConfig.Store))
 
 				ready := make(chan bool, 1)
 				service := orders.NewOrdersService(ordersConfig.Store)
