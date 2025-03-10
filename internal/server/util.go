@@ -30,6 +30,11 @@ func RunServersInParallel(servers []Server, runConfig ServerRunConfig) *sync.Wai
 				panic(runError)
 			}
 		}()
+
+	}
+
+	for _, server := range servers {
+		<-server.GetServingChannel()
 	}
 
 	return &wg

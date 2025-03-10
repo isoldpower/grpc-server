@@ -10,7 +10,7 @@ import (
 )
 
 type RootCommand struct {
-	kitchenConfig   *KitchenConfig
+	kitchenConfig   *Config
 	commandInstance *cobra.Command
 }
 

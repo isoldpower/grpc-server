@@ -1,8 +1,20 @@
-# Commands for running the services
+# Global commands
+run-all:
+	@go run main.go run $(ARGS)
+migrate-all:
+	@go run main.go migrate $(ARGS)
+
+# Orders commands
 run-orders:
-	@go run services/orders/*.go
+	@go run main.go orders run $(ARGS)
+migrate-orders:
+	@go run main.go orders migrate $(ARGS)
+
+# Kitchen commands
 run-kitchen:
-	@go run services/kitchen/*.go
+	@go run main.go kitchen run $(ARGS)
+migrate-kitchen:
+	@go run main.go kitchen migrate $(ARGS)
 
 # Commands for generating protobuf code from protobuf folder at different languages
 gen-go:

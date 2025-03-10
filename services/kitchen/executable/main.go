@@ -1,7 +1,9 @@
 package main
 
-import "golang-grpc/services/kitchen"
+import (
+	"golang-grpc/services/kitchen"
+)
 
 func main() {
-	kitchen.StartKitchenService()
+	kitchen.ExternalStart()
 }

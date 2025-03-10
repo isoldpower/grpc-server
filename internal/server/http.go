@@ -27,11 +27,12 @@ type HttpServerConfig struct {
 }
 
 type HTTPServer struct {
-	basicConfig *HttpServerConfig
-	router      *http.ServeMux
-	listener    net.Listener
-	server      *http.Server
-	doneChannel chan bool
+	basicConfig    *HttpServerConfig
+	router         *http.ServeMux
+	listener       net.Listener
+	server         *http.Server
+	doneChannel    chan bool
+	servingChannel chan bool
 }
 
 func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
@@ -39,34 +40,6 @@ func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
 		fmt.Println("Error occurred while listening for errors: ")
 		fmt.Println("\t", err)
 	}
-}
-
-// NewHTTPServer safely creates new HTTPServer instance with predefined private fields.
-// It defines basic router, done channel and listener
-func NewHTTPServer(basicConfig *HttpServerConfig) *HTTPServer {
-	if basicConfig.Network == "" {
-		basicConfig.Network = NetworkTypeTCP
-	}
-
-	doneChannel := make(chan bool, 1)
-	listener, err := createListener(basicConfig.Host, basicConfig.Port, basicConfig.Network)
-	if err != nil {
-		fmt.Printf("Failed to create listener: %v\n", err)
-		doneChannel <- false
-	}
-
-	return &HTTPServer{
-		router:      http.NewServeMux(),
-		basicConfig: basicConfig,
-		listener:    listener,
-		doneChannel: doneChannel,
-	}
-}
-
-// GetDoneChannel returns the read-only boolean channel with "done" indicator.
-// The indicator signals whether the server finished its work.
-func (hs *HTTPServer) GetDoneChannel() <-chan bool {
-	return hs.doneChannel
 }
 
 func (hs *HTTPServer) trackGracefulShutdown() {
@@ -99,11 +72,47 @@ func (hs *HTTPServer) trackGracefulShutdown() {
 }
 
 func (hs *HTTPServer) serveRouter() {
+	hs.servingChannel <- true
 	err := hs.server.Serve(hs.listener)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		hs.doneChannel <- false
 		fmt.Println("Error occurred while serving: ", err)
 	}
+}
+
+// NewHTTPServer safely creates new HTTPServer instance with predefined private fields.
+// It defines basic router, done channel and listener
+func NewHTTPServer(basicConfig *HttpServerConfig) *HTTPServer {
+	if basicConfig.Network == "" {
+		basicConfig.Network = NetworkTypeTCP
+	}
+
+	doneChannel := make(chan bool, 1)
+	listener, err := createListener(basicConfig.Host, basicConfig.Port, basicConfig.Network)
+	if err != nil {
+		fmt.Printf("Failed to create listener: %v\n", err)
+		doneChannel <- false
+	}
+
+	return &HTTPServer{
+		router:         http.NewServeMux(),
+		basicConfig:    basicConfig,
+		listener:       listener,
+		doneChannel:    doneChannel,
+		servingChannel: make(chan bool, 1),
+	}
+}
+
+// GetDoneChannel returns the read-only boolean channel with "done" indicator.
+// The indicator signals whether the server finished its work.
+func (hs *HTTPServer) GetDoneChannel() <-chan bool {
+	return hs.doneChannel
+}
+
+// GetServingChannel returns the read-only boolean channel with "serving" indicator.
+// The indicator signals whether the server is serving and accepting connections.
+func (hs *HTTPServer) GetServingChannel() <-chan bool {
+	return hs.servingChannel
 }
 
 // AddRoute adds additional route to server's http.ServeMux handler
@@ -123,8 +132,11 @@ func (hs *HTTPServer) Run(config ServerRunConfig) error {
 		Handler: hs.router,
 	}
 
-	fmt.Printf("🔥 Listening at http://%s\n", address)
+	if !config.Silent {
+		fmt.Printf("🔥 Listening at http://%s\n", address)
+	}
 	go hs.serveRouter()
+
 	if config.WithGracefulShutdown {
 		go hs.trackGracefulShutdown()
 	}

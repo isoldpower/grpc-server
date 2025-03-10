@@ -37,15 +37,16 @@ func (hs *HTTPServer) registerRoutes() {
 }
 
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
+	fmt.Println("🔄 Running 🔪Kitchen HTTP server...")
 	hs.registerRoutes()
 	err := hs.server.Run(config)
 
 	go func() {
 		doneChannel := hs.server.GetDoneChannel()
 		if <-doneChannel {
-			fmt.Println("HTTP server shut down...")
+			fmt.Println("🔪Kitchen HTTP server shut down...")
 		} else {
-			fmt.Println("HTTP server forced to shut.")
+			fmt.Println("🔪Kitchen HTTP server forced to shut.")
 		}
 	}()
 
@@ -54,6 +55,10 @@ func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
 
 func (hs *HTTPServer) GetDoneChannel() <-chan bool {
 	return hs.server.GetDoneChannel()
+}
+
+func (hs *HTTPServer) GetServingChannel() <-chan bool {
+	return hs.server.GetServingChannel()
 }
 
 func (hs *HTTPServer) Stop() error {

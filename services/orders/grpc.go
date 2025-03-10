@@ -37,13 +37,19 @@ func NewGRPCServer(defaultConfig *gRPCServerConfig) *GRPCServer {
 // GetDoneChannel returns the boolean read-only channel with done signal.
 // The transferred signal is true when the server shut down successfully and false when with errors
 func (s *GRPCServer) GetDoneChannel() <-chan bool {
-	return s.GetDoneChannel()
+	return s.server.GetDoneChannel()
+}
+
+// GetServingChannel returns the read-only boolean channel with "serving" indicator.
+// The indicator signals whether the server is serving and accepting connections.
+func (s *GRPCServer) GetServingChannel() <-chan bool {
+	return s.server.GetServingChannel()
 }
 
 // Run starts the server to listen and handle at specific port.
 // Returns possible server run process error
 func (s *GRPCServer) Run(config server.ServerRunConfig) error {
-	fmt.Println("🔄 Running gRPC server...")
+	fmt.Println("🔄 Running 📦Orders gRPC server...")
 	s.registerServices()
 
 	return s.server.Run(config)

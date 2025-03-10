@@ -9,11 +9,11 @@ import (
 )
 
 type RunCommand struct {
-	config          *OrdersConfig
+	config          *Config
 	commandInstance *cobra.Command
 }
 
-func NewRunCommand(ordersConfig *OrdersConfig) *RunCommand {
+func NewRunCommand(ordersConfig *Config) *RunCommand {
 	return &RunCommand{
 		config: ordersConfig,
 		commandInstance: &cobra.Command{
@@ -26,10 +26,13 @@ func NewRunCommand(ordersConfig *OrdersConfig) *RunCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				value, _ := json.MarshalIndent(ordersConfig.store, "", "  ")
+				value, _ := json.MarshalIndent(ordersConfig.Store, "", "  ")
 				fmt.Printf("Executed run orders command. Resolved config: %s\n", value)
 
-				orders.StartOrdersService(ordersConfig.store)
+				ready := make(chan bool, 1)
+				service := orders.NewOrdersService(ordersConfig.Store)
+				done := service.Execute(ready)
+				<-done
 			},
 		},
 	}

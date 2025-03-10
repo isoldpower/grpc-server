@@ -20,6 +20,7 @@ type GRPCServer struct {
 	listener          net.Listener
 	serviceRegistrars []func(*grpc.Server)
 	doneChannel       chan bool
+	servingChannel    chan bool
 }
 
 func (gs *GRPCServer) trackGracefulShutdown() {
@@ -57,6 +58,7 @@ func NewGRPCServer(basicConfig *GrpcServerConfig) *GRPCServer {
 		basicConfig:       basicConfig,
 		doneChannel:       doneChannel,
 		serviceRegistrars: make([]func(*grpc.Server), 0),
+		servingChannel:    make(chan bool, 1),
 	}
 }
 
@@ -64,6 +66,12 @@ func NewGRPCServer(basicConfig *GrpcServerConfig) *GRPCServer {
 // The indicator signals whether the server finished its work.
 func (gs *GRPCServer) GetDoneChannel() <-chan bool {
 	return gs.doneChannel
+}
+
+// GetServingChannel returns the read-only boolean channel with "serving" indicator.
+// The indicator signals whether the server is serving and accepting connections.
+func (gs *GRPCServer) GetServingChannel() <-chan bool {
+	return gs.servingChannel
 }
 
 // AddServiceRegistrar adds service register function to the list of
@@ -85,13 +93,16 @@ func (gs *GRPCServer) Run(config ServerRunConfig) error {
 	}
 
 	go func() {
+		gs.servingChannel <- true
 		serveError := gs.server.Serve(gs.listener)
 		if serveError != nil {
 			gs.doneChannel <- false
 		}
 	}()
 
-	fmt.Printf("🔥 Listening at tcp://%s\n", address)
+	if !config.Silent {
+		fmt.Printf("🔥 Listening at tcp://%s\n", address)
+	}
 
 	if config.WithGracefulShutdown {
 		go gs.trackGracefulShutdown()

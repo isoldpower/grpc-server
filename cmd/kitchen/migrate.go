@@ -8,11 +8,11 @@ import (
 )
 
 type MigrateCommand struct {
-	config          *KitchenConfig
+	config          *Config
 	commandInstance *cobra.Command
 }
 
-func NewMigrateCommand(config *KitchenConfig) *MigrateCommand {
+func NewMigrateCommand(config *Config) *MigrateCommand {
 	return &MigrateCommand{
 		config: config,
 		commandInstance: &cobra.Command{

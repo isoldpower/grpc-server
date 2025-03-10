@@ -9,11 +9,11 @@ import (
 )
 
 type RunCommand struct {
-	config          *KitchenConfig
+	config          *Config
 	commandInstance *cobra.Command
 }
 
-func NewRunCommand(kitchenConfig *KitchenConfig) *RunCommand {
+func NewRunCommand(kitchenConfig *Config) *RunCommand {
 	return &RunCommand{
 		config: kitchenConfig,
 		commandInstance: &cobra.Command{
@@ -26,10 +26,13 @@ func NewRunCommand(kitchenConfig *KitchenConfig) *RunCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				value, _ := json.MarshalIndent(kitchenConfig.store, "", "  ")
+				value, _ := json.MarshalIndent(kitchenConfig.Store, "", "  ")
 				fmt.Printf("Executed run kitchen command. Resolved config: %s\n", value)
 
-				kitchen.StartKitchenService(kitchenConfig.store)
+				ready := make(chan bool, 1)
+				service := kitchen.NewKitchenService(kitchenConfig.Store)
+				done := service.Execute(ready)
+				<-done
 			},
 		},
 	}

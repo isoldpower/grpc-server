@@ -36,13 +36,20 @@ go run main.go run
 
 #### Service-specific commands
 Those commands target at specific microservice and run commands at a service.
-For example, by using `go run main.go run orders`, you will run only `orders` microservice
+For example, by using `go run main.go orders run`, you will run only `orders` microservice
 and ignore the possible dependence on other microservices. <br>
 Global pattern:
 ```bash
-go run main.go [command] [service]
+go run main.go [service] [command]
 ```
 Example:
 ```bash
-go run main.go migrate orders
+go run main.go orders migrate
 ```
+
+
+
+## Future plans:
+1) logger with silent and debug mode
+2) colorful output for logger
+3) minimize goroutines memory leak

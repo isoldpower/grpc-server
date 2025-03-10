@@ -46,7 +46,7 @@ func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 
 // Run bootstraps the orders HTTP server with desired logging
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
-	fmt.Println("🔄 Running HTTP server...")
+	fmt.Println("🔄 Running 📦Orders HTTP server...")
 	hs.registerRoutes()
 	return hs.server.Run(config)
 }
@@ -55,6 +55,12 @@ func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
 // Signal is true if the server finished successfully and false if server finished with error
 func (hs *HTTPServer) GetDoneChannel() <-chan bool {
 	return hs.server.GetDoneChannel()
+}
+
+// GetServingChannel returns the read-only boolean channel with "serving" indicator.
+// The indicator signals whether the server is serving and accepting connections.
+func (hs *HTTPServer) GetServingChannel() <-chan bool {
+	return hs.server.GetServingChannel()
 }
 
 // Stop gracefully closes the connection to the server

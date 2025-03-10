@@ -10,7 +10,7 @@ import (
 )
 
 type RootCommand struct {
-	ordersConfig    *OrdersConfig
+	ordersConfig    *Config
 	commandInstance *cobra.Command
 }
 
@@ -36,6 +36,7 @@ func NewRootCommand(rootConfig *config.RootConfig) *RootCommand {
 			Run: func(cmd *cobra.Command, args []string) {
 				value, _ := json.MarshalIndent(commandConfig, "", "  ")
 				fmt.Printf("Executed orders command. Resolved config: %s\n", value)
+				cmd.HelpFunc()(cmd, args)
 			},
 		},
 	}
