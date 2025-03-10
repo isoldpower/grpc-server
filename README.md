@@ -47,9 +47,7 @@ Example:
 go run main.go orders migrate
 ```
 
-
-
 ## Future plans:
-1) logger with silent and debug mode
-2) colorful output for logger
-3) minimize goroutines memory leak
+1) minimize goroutines memory leak
+2) add title to HTTP and gRPC servers
+3) set up database connection
