@@ -1,7 +1,8 @@
-package main
+package orders
 
 import (
-	"fmt"
+	"golang-grpc/internal/color"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/server"
 	"golang-grpc/services/orders/handler"
 	"golang-grpc/services/orders/service"
@@ -46,7 +47,11 @@ func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 
 // Run bootstraps the orders HTTP server with desired logging
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
-	fmt.Println("🔄 Running HTTP server...")
+	log.Processln("Running %s Orders HTTP server...", log.GetIcon(log.BoxIcon))
+	log.RaiseLog(func() {
+		log.Logln("%s Press %s to exit", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
+	})
+
 	hs.registerRoutes()
 	return hs.server.Run(config)
 }
@@ -57,12 +62,17 @@ func (hs *HTTPServer) GetDoneChannel() <-chan bool {
 	return hs.server.GetDoneChannel()
 }
 
+// GetServingChannel returns the read-only boolean channel with "serving" indicator.
+// The indicator signals whether the server is serving and accepting connections.
+func (hs *HTTPServer) GetServingChannel() <-chan bool {
+	return hs.server.GetServingChannel()
+}
+
 // Stop gracefully closes the connection to the server
 func (hs *HTTPServer) Stop() error {
 	err := hs.listener.Close()
 	if err != nil {
-		fmt.Println("Error occurred while closing the HTTP connection")
-		fmt.Println(err.Error())
+		log.PrintError("Error occurred while closing the HTTP connection", err)
 	}
 
 	return err

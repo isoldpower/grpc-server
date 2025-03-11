@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang-grpc/internal/color"
+	"golang-grpc/internal/log"
 	"net"
 	"net/http"
 	"os/signal"
@@ -27,17 +29,57 @@ type HttpServerConfig struct {
 }
 
 type HTTPServer struct {
-	basicConfig *HttpServerConfig
-	router      *http.ServeMux
-	listener    net.Listener
-	server      *http.Server
-	doneChannel chan bool
+	basicConfig    *HttpServerConfig
+	router         *http.ServeMux
+	listener       net.Listener
+	server         *http.Server
+	doneChannel    chan bool
+	servingChannel chan bool
 }
 
 func (hs *HTTPServer) listenForErrors(errorChannel <-chan error) {
 	for err := range errorChannel {
-		fmt.Println("Error occurred while listening for errors: ")
-		fmt.Println("\t", err)
+		log.PrintError("Error occurred while listening for errors", err)
+	}
+}
+
+func (hs *HTTPServer) trackGracefulShutdown() {
+	// Track for shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	select {
+	case <-hs.doneChannel:
+		log.Infoln("Internal server shutdown signal received")
+		break
+	case <-ctx.Done():
+		log.Processln("Shutting down %s server gracefully", color.Blue("HTTP"))
+		log.RaiseLog(func() {
+			log.Logln("%s Press %s again to force", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
+		})
+		break
+	}
+
+	// Shut the server down in 5 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Handle force shutdown
+	if err := hs.server.Shutdown(ctx); err != nil {
+		log.PrintError("Server forced to shutdown with error", err)
+		hs.doneChannel <- false
+	}
+
+	// Finish shutdown
+	hs.doneChannel <- true
+}
+
+func (hs *HTTPServer) serveRouter() {
+	hs.servingChannel <- true
+	err := hs.server.Serve(hs.listener)
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		hs.doneChannel <- false
+		log.PrintError("Error occurred while serving HTTP listener", err)
 	}
 }
 
@@ -51,15 +93,16 @@ func NewHTTPServer(basicConfig *HttpServerConfig) *HTTPServer {
 	doneChannel := make(chan bool, 1)
 	listener, err := createListener(basicConfig.Host, basicConfig.Port, basicConfig.Network)
 	if err != nil {
-		fmt.Printf("Failed to create listener: %v\n", err)
+		log.PrintError("Failed to create HTTP listener", err)
 		doneChannel <- false
 	}
 
 	return &HTTPServer{
-		router:      http.NewServeMux(),
-		basicConfig: basicConfig,
-		listener:    listener,
-		doneChannel: doneChannel,
+		router:         http.NewServeMux(),
+		basicConfig:    basicConfig,
+		listener:       listener,
+		doneChannel:    doneChannel,
+		servingChannel: make(chan bool, 1),
 	}
 }
 
@@ -69,41 +112,10 @@ func (hs *HTTPServer) GetDoneChannel() <-chan bool {
 	return hs.doneChannel
 }
 
-func (hs *HTTPServer) trackGracefulShutdown() {
-	// Track for shutdown
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	select {
-	case <-hs.doneChannel:
-		fmt.Println("Internal server shutdown signal received")
-		break
-	case <-ctx.Done():
-		fmt.Println("Shutting down gRPC server gracefully")
-		fmt.Println("\t ↳ Press Ctrl+C again to force")
-		break
-	}
-
-	// Shut the server down in 5 seconds
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Handle force shutdown
-	if err := hs.server.Shutdown(ctx); err != nil {
-		fmt.Printf("Server forced to shutdown with error: %v", err)
-		hs.doneChannel <- false
-	}
-
-	// Finish shutdown
-	hs.doneChannel <- true
-}
-
-func (hs *HTTPServer) serveRouter() {
-	err := hs.server.Serve(hs.listener)
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		hs.doneChannel <- false
-		fmt.Println("Error occurred while serving: ", err)
-	}
+// GetServingChannel returns the read-only boolean channel with "serving" indicator.
+// The indicator signals whether the server is serving and accepting connections.
+func (hs *HTTPServer) GetServingChannel() <-chan bool {
+	return hs.servingChannel
 }
 
 // AddRoute adds additional route to server's http.ServeMux handler
@@ -123,17 +135,20 @@ func (hs *HTTPServer) Run(config ServerRunConfig) error {
 		Handler: hs.router,
 	}
 
-	fmt.Printf("🔥 Listening at http://%s\n", address)
+	if !config.Silent {
+		log.Processln("Listening at http://%s\n", address)
+	}
 	go hs.serveRouter()
+
 	if config.WithGracefulShutdown {
 		go hs.trackGracefulShutdown()
 	}
 
 	if <-hs.doneChannel {
-		fmt.Println("🟢 Graceful shutdown complete.")
+		log.Successln("Graceful shutdown complete %s.", color.Blue("(HTTP)"))
 		hs.doneChannel <- true
 	} else {
-		fmt.Println("❌ Exited with problems.")
+		log.Errorln("Exited with problems.")
 		hs.doneChannel <- false
 	}
 

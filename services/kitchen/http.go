@@ -1,7 +1,8 @@
-package main
+package kitchen
 
 import (
-	"fmt"
+	"golang-grpc/internal/color"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/server"
 	"golang-grpc/services/kitchen/handler"
 	"net"
@@ -37,15 +38,19 @@ func (hs *HTTPServer) registerRoutes() {
 }
 
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
+	log.Processln("Running Kitchen HTTP server...")
+	log.RaiseLog(func() {
+		log.Logln("%s Press %s to exit", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
+	})
 	hs.registerRoutes()
 	err := hs.server.Run(config)
 
 	go func() {
 		doneChannel := hs.server.GetDoneChannel()
 		if <-doneChannel {
-			fmt.Println("HTTP server shut down...")
+			log.Infoln("%s Kitchen HTTP server shut down...", log.GetIcon(log.KnifeIcon))
 		} else {
-			fmt.Println("HTTP server forced to shut.")
+			log.Errorln("%s Kitchen HTTP server forced to shut.", log.GetIcon(log.KnifeIcon))
 		}
 	}()
 
@@ -54,6 +59,10 @@ func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
 
 func (hs *HTTPServer) GetDoneChannel() <-chan bool {
 	return hs.server.GetDoneChannel()
+}
+
+func (hs *HTTPServer) GetServingChannel() <-chan bool {
+	return hs.server.GetServingChannel()
 }
 
 func (hs *HTTPServer) Stop() error {

@@ -4,6 +4,7 @@ import "net/http"
 
 type ServerRunConfig struct {
 	WithGracefulShutdown bool
+	Silent               bool
 }
 
 type ServerConfig struct {
@@ -20,4 +21,5 @@ type Server interface {
 	Run(ServerRunConfig) error
 	Stop() error
 	GetDoneChannel() <-chan bool
+	GetServingChannel() <-chan bool
 }

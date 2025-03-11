@@ -1,7 +1,8 @@
-package main
+package orders
 
 import (
-	"fmt"
+	"golang-grpc/internal/color"
+	"golang-grpc/internal/log"
 	"golang-grpc/internal/server"
 	"golang-grpc/services/orders/handler"
 	"golang-grpc/services/orders/service"
@@ -37,13 +38,23 @@ func NewGRPCServer(defaultConfig *gRPCServerConfig) *GRPCServer {
 // GetDoneChannel returns the boolean read-only channel with done signal.
 // The transferred signal is true when the server shut down successfully and false when with errors
 func (s *GRPCServer) GetDoneChannel() <-chan bool {
-	return s.GetDoneChannel()
+	return s.server.GetDoneChannel()
+}
+
+// GetServingChannel returns the read-only boolean channel with "serving" indicator.
+// The indicator signals whether the server is serving and accepting connections.
+func (s *GRPCServer) GetServingChannel() <-chan bool {
+	return s.server.GetServingChannel()
 }
 
 // Run starts the server to listen and handle at specific port.
 // Returns possible server run process error
 func (s *GRPCServer) Run(config server.ServerRunConfig) error {
-	fmt.Println("🔄 Running gRPC server...")
+	log.Processln("Running %s Orders gRPC server...", log.GetIcon(log.BoxIcon))
+	log.RaiseLog(func() {
+		log.Logln("%s Press %s to exit", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
+	})
+
 	s.registerServices()
 
 	return s.server.Run(config)

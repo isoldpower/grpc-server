@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"golang-grpc/internal/color"
+	"golang-grpc/internal/log"
 	"google.golang.org/grpc"
 	"net"
 	"os/signal"
@@ -20,6 +22,7 @@ type GRPCServer struct {
 	listener          net.Listener
 	serviceRegistrars []func(*grpc.Server)
 	doneChannel       chan bool
+	servingChannel    chan bool
 }
 
 func (gs *GRPCServer) trackGracefulShutdown() {
@@ -28,17 +31,19 @@ func (gs *GRPCServer) trackGracefulShutdown() {
 
 	select {
 	case <-gs.doneChannel:
-		fmt.Println("Internal server shutdown signal received")
+		log.Infoln("Internal server shutdown signal received")
 		return
 	case <-ctx.Done():
-		fmt.Println("Shutting down gRPC server gracefully")
-		fmt.Println("\t ↳ Press Ctrl+C again to force")
+		log.Processln("Shutting down %s server gracefully", color.Green("gRPC"))
+		log.RaiseLog(func() {
+			log.Logln("%s Press %s again to force", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
+		})
 		break
 	}
 
 	err := gs.Stop()
 	if err != nil {
-		fmt.Println("Error shutting down gracefully")
+		log.PrintError("Error shutting down gracefully", err)
 	}
 }
 
@@ -48,7 +53,7 @@ func NewGRPCServer(basicConfig *GrpcServerConfig) *GRPCServer {
 	doneChannel := make(chan bool, 1)
 	listener, err := createListener(basicConfig.Host, basicConfig.Port, NetworkTypeTCP)
 	if err != nil {
-		fmt.Printf("Failed to create listener: %v\n", err)
+		log.PrintError("Failed to create gRPC listener", err)
 		doneChannel <- false
 	}
 
@@ -57,6 +62,7 @@ func NewGRPCServer(basicConfig *GrpcServerConfig) *GRPCServer {
 		basicConfig:       basicConfig,
 		doneChannel:       doneChannel,
 		serviceRegistrars: make([]func(*grpc.Server), 0),
+		servingChannel:    make(chan bool, 1),
 	}
 }
 
@@ -64,6 +70,12 @@ func NewGRPCServer(basicConfig *GrpcServerConfig) *GRPCServer {
 // The indicator signals whether the server finished its work.
 func (gs *GRPCServer) GetDoneChannel() <-chan bool {
 	return gs.doneChannel
+}
+
+// GetServingChannel returns the read-only boolean channel with "serving" indicator.
+// The indicator signals whether the server is serving and accepting connections.
+func (gs *GRPCServer) GetServingChannel() <-chan bool {
+	return gs.servingChannel
 }
 
 // AddServiceRegistrar adds service register function to the list of
@@ -85,23 +97,26 @@ func (gs *GRPCServer) Run(config ServerRunConfig) error {
 	}
 
 	go func() {
+		gs.servingChannel <- true
 		serveError := gs.server.Serve(gs.listener)
 		if serveError != nil {
 			gs.doneChannel <- false
 		}
 	}()
 
-	fmt.Printf("🔥 Listening at tcp://%s\n", address)
+	if !config.Silent {
+		log.Processln("Listening at tcp://%s\n", address)
+	}
 
 	if config.WithGracefulShutdown {
 		go gs.trackGracefulShutdown()
 	}
 
 	if <-gs.doneChannel {
-		fmt.Println("🟢 Graceful shutdown complete.")
+		log.Successln("Graceful shutdown complete %s.", color.Green("(gRPC)"))
 		gs.doneChannel <- true
 	} else {
-		fmt.Println("❌ Exited with problems.")
+		log.Errorln("Exited with problems.")
 		gs.doneChannel <- false
 	}
 
@@ -120,10 +135,9 @@ func (gs *GRPCServer) Stop() error {
 
 	select {
 	case <-stopChannel:
-		fmt.Println("Server shut down gracefully")
 		gs.doneChannel <- true
 	case <-time.After(3 * time.Second):
-		fmt.Println("Graceful shutdown timed out, forcing server shutdown")
+		log.Infoln("Graceful shutdown timed out, forcing server shutdown")
 		gs.server.Stop()
 		gs.doneChannel <- false
 	}
