@@ -7,6 +7,7 @@ const (
 	BanIcon       Icon = "🚫 "
 	CheckIcon     Icon = "✅  "
 	RocketIcon    Icon = "🚀 "
+	WarnIcon      Icon = "⚠️ "
 	PencilIcon    Icon = "✏️ "
 	TerminateIcon Icon = "💥"
 	BoxIcon       Icon = "📦"

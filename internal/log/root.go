@@ -74,3 +74,15 @@ func Processf(format string, args ...any) {
 func Processln(format string, args ...any) {
 	Processf(format+"\n", args...)
 }
+
+func Warnf(format string, args ...any) {
+	if !isSilent {
+		prefix := getPrefix(LogTypeWarn)
+		line := fmt.Sprintf(format, args...)
+		fmt.Printf("%s%s", prefix, line)
+	}
+}
+
+func Warnln(format string, args ...any) {
+	Warnf(format+"\n", args...)
+}

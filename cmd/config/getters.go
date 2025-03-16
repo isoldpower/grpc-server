@@ -31,6 +31,14 @@ func (vr *ViperReader) SafeGetString(key string, current string) string {
 	return current
 }
 
+func (vr *ViperReader) SafeGetInt(key string, current int) int {
+	if vr.instance.InConfig(key) {
+		return vr.instance.GetInt(key)
+	}
+
+	return current
+}
+
 type DualParamReader struct {
 	viper *viper.Viper
 	flags *pflag.FlagSet
@@ -62,6 +70,18 @@ func (vr *DualParamReader) SafeGetString(key string, current string) string {
 	}
 	if vr.viper.InConfig(key) {
 		return vr.viper.GetString(key)
+	}
+
+	return current
+}
+
+func (vr *DualParamReader) SafeGetInt(key string, current int) int {
+	if vr.flags.Changed(key) {
+		res, _ := vr.flags.GetInt(key)
+		return res
+	}
+	if vr.viper.InConfig(key) {
+		return vr.viper.GetInt(key)
 	}
 
 	return current

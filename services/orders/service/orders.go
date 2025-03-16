@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"golang-grpc/internal/database"
 	"golang-grpc/services/common/genproto/orders"
 	"golang-grpc/services/orders/storage"
 	"golang-grpc/services/orders/types"
@@ -16,14 +15,7 @@ type OrderService struct {
 func NewOrderService() *OrderService {
 	// TODO: Read config from global context
 	return &OrderService{
-		storage: storage.NewPostgresStorage(&database.Config{
-			Host:     "localhost",
-			Port:     5433,
-			Username: "runtime",
-			Password: "1234",
-			Database: "orders",
-			Schema:   "public",
-		}),
+		storage: storage.NewPostgresStorage(storage.Config.Database),
 	}
 }
 

@@ -20,35 +20,34 @@ const (
 type Config struct {
 	Store *types.InitialConfig
 
-	prefix        string
-	serviceConfig string
-	viperInstance *viper.Viper
+	prefix         string
+	serviceConfig  string
+	databaseConfig *config.DatabaseConfig
+	viperInstance  *viper.Viper
 }
 
 func NewOrdersConfig(rootConfig *config.RootConfig) *Config {
+	viperInstance := viper.New()
+	databaseConfig := config.NewDatabaseConfig(viperInstance)
+
 	return &Config{
 		Store: &types.InitialConfig{
-			Root: rootConfig,
-			Test: "default",
+			Root:     rootConfig,
+			Database: databaseConfig.Config,
 		},
 
-		prefix:        "",
-		serviceConfig: filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
-		viperInstance: viper.New(),
+		prefix:         "",
+		serviceConfig:  filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
+		viperInstance:  viperInstance,
+		databaseConfig: databaseConfig,
 	}
 }
 
 func NewPrefixedOrdersConfig(rootConfig *config.RootConfig, prefix string) *Config {
-	return &Config{
-		Store: &types.InitialConfig{
-			Root: rootConfig,
-			Test: "default",
-		},
+	configInstance := NewOrdersConfig(rootConfig)
+	configInstance.prefix = prefix
 
-		prefix:        prefix,
-		serviceConfig: filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
-		viperInstance: viper.New(),
-	}
+	return configInstance
 }
 
 func (oc *Config) RegisterFlags(cmd *cobra.Command) {
@@ -60,12 +59,7 @@ func (oc *Config) RegisterFlags(cmd *cobra.Command) {
 		oc.serviceConfig,
 		"change service-specific config path",
 	)
-	cmd.PersistentFlags().StringVar(
-		&oc.Store.Test,
-		applier.WithPrefix(string(TestConfigKey)),
-		oc.Store.Test,
-		"just test variable",
-	)
+	oc.databaseConfig.RegisterFlags(cmd)
 }
 
 func (oc *Config) TryResolveConfig(_ string) error {
@@ -78,10 +72,10 @@ func (oc *Config) TryResolveConfig(_ string) error {
 	return nil
 }
 
-func (oc *Config) ResolveFlagsAndArgs(flags *pflag.FlagSet, _ []string) error {
-	var resolver config.ParamReader = config.NewDualReader(oc.viperInstance, flags)
-
-	oc.Store.Test = resolver.SafeGetString(string(TestConfigKey), oc.Store.Test)
+func (oc *Config) ResolveFlagsAndArgs(flags *pflag.FlagSet, args []string) error {
+	if err := oc.databaseConfig.ResolveFlagsAndArgs(flags, args); err != nil {
+		return err
+	}
 
 	return nil
 }
