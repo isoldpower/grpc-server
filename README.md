@@ -48,7 +48,8 @@ go run main.go orders migrate
 ```
 
 ## Future plans:
-1) set up database connection
-2) write tests
-3) minimize goroutines memory leak
-4) add title to HTTP and gRPC servers
+1) add database migration system
+2) write project usage manual (manual usage, cmd usage)
+3) write tests
+4) minimize goroutines memory leak
+5) add title to HTTP and gRPC servers
