@@ -2,6 +2,7 @@ package orders
 
 import (
 	"github.com/spf13/cobra"
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 )
@@ -24,7 +25,7 @@ func NewMigrateCommand(config *Config) *MigrateCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				log.Infoln("Executed migrate orders command")
+				log.Infoln("Executed %s command", color.Underline("migrate orders"))
 				log.Debugln("Resolved orders config: %s", log.GetObjectPattern(config.Store))
 			},
 		},

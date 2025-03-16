@@ -26,6 +26,17 @@ func NewRootConfig() *RootConfig {
 	}
 }
 
+func NewRootConfigAt(path string) *RootConfig {
+	rootViper := viper.New()
+
+	return &RootConfig{
+		viperInstance: rootViper,
+		Cli:           NewCliConfig(rootViper),
+		Context:       NewProcessContext(),
+		configPath:    path,
+	}
+}
+
 func (cc *RootConfig) RegisterFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&cc.configPath, "config", "./root_config.yaml", "config file path")
 

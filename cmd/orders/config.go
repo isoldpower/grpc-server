@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/viper"
 	"golang-grpc/cmd/config"
 	"golang-grpc/internal/util"
-	"golang-grpc/services/orders/store"
+	"golang-grpc/services/orders/types"
 	"path/filepath"
 )
 
@@ -18,7 +18,7 @@ const (
 )
 
 type Config struct {
-	Store *store.InitialConfig
+	Store *types.InitialConfig
 
 	prefix        string
 	serviceConfig string
@@ -27,7 +27,7 @@ type Config struct {
 
 func NewOrdersConfig(rootConfig *config.RootConfig) *Config {
 	return &Config{
-		Store: &store.InitialConfig{
+		Store: &types.InitialConfig{
 			Root: rootConfig,
 			Test: "default",
 		},
@@ -40,7 +40,7 @@ func NewOrdersConfig(rootConfig *config.RootConfig) *Config {
 
 func NewPrefixedOrdersConfig(rootConfig *config.RootConfig, prefix string) *Config {
 	return &Config{
-		Store: &store.InitialConfig{
+		Store: &types.InitialConfig{
 			Root: rootConfig,
 			Test: "default",
 		},

@@ -5,6 +5,7 @@ import (
 	"golang-grpc/cmd/config"
 	kitchenCmd "golang-grpc/cmd/kitchen"
 	ordersCmd "golang-grpc/cmd/orders"
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 	"golang-grpc/services/common/types"
@@ -86,7 +87,7 @@ func NewRunCommand(rootConfig *config.RootConfig) *RunCommand {
 			})
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			log.Infoln("Executed run-all command")
+			log.Infoln("Executed %s command", color.Underline("run-all"))
 			log.Debugln("Resolved kitchen config: %s", log.GetObjectPattern(kitchenConfig.Store))
 			log.Debugln("Resolved orders config: %s", log.GetObjectPattern(ordersConfig.Store))
 

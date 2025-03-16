@@ -7,5 +7,5 @@
 **/*.pb.*
 
 # configuration and private files
-**/*config.yaml
+**/*config*.yaml
 .env

@@ -2,6 +2,7 @@ package kitchen
 
 import (
 	"github.com/spf13/cobra"
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 	"golang-grpc/services/kitchen"
@@ -25,7 +26,7 @@ func NewRunCommand(kitchenConfig *Config) *RunCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				log.Infoln("Executed migrate kitchen command")
+				log.Infoln("Executed %s command", color.Underline("run kitchen"))
 				log.Debugln("Resolved kitchen config: %s", log.GetObjectPattern(kitchenConfig.Store))
 
 				ready := make(chan bool, 1)

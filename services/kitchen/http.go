@@ -1,6 +1,7 @@
 package kitchen
 
 import (
+	"fmt"
 	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/server"
@@ -38,9 +39,17 @@ func (hs *HTTPServer) registerRoutes() {
 }
 
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
-	log.Processln("Running Kitchen HTTP server...")
+	log.Processln(
+		"Running %s Kitchen HTTP server at %s",
+		log.GetIcon(log.KnifeIcon),
+		color.Green(fmt.Sprintf("%s:%d", hs.basicConfig.Host, hs.basicConfig.Port)),
+	)
 	log.RaiseLog(func() {
-		log.Logln("%s Press %s to exit", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
+		log.Logln(
+			"%s Press %s to exit",
+			log.GetIcon(log.AttentionIcon),
+			color.Red("Ctrl+C"),
+		)
 	})
 	hs.registerRoutes()
 	err := hs.server.Run(config)

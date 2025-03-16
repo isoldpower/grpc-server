@@ -2,6 +2,7 @@ package orders
 
 import (
 	"github.com/spf13/cobra"
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 	"golang-grpc/services/orders"
@@ -25,7 +26,7 @@ func NewRunCommand(ordersConfig *Config) *RunCommand {
 				})
 			},
 			Run: func(cmd *cobra.Command, args []string) {
-				log.Infoln("Executed run orders command")
+				log.Infoln("Executed %s command", color.Underline("run orders"))
 				log.Debugln("Resolved orders config: %s", log.GetObjectPattern(ordersConfig.Store))
 
 				ready := make(chan bool, 1)

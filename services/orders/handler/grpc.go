@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"golang-grpc/internal/log"
 	"golang-grpc/services/common/genproto/orders"
 	"golang-grpc/services/orders/types"
 	"google.golang.org/grpc"
@@ -25,10 +26,11 @@ func NewGrpcOrdersHandler(server *grpc.Server, orderService types.OrderService) 
 // CreateOrder writes new order to local storage from grpc request
 func (h *OrdersGrpcHandler) CreateOrder(
 	context context.Context,
-	_ *orders.CreateOrderRequest,
+	req *orders.CreateOrderRequest,
 ) (*orders.CreateOrderResponse, error) {
+	log.Debugln("Create Order Request", req)
 	order := &orders.Order{
-		OrderID:    52,
+		ID:         52,
 		CustomerID: 2,
 		ProductID:  1,
 		Quantity:   1,
@@ -36,6 +38,7 @@ func (h *OrdersGrpcHandler) CreateOrder(
 
 	createError := h.OrdersService.CreateOrder(context, order)
 	if createError != nil {
+		log.PrintError("create order error occurred at gRPC connection", createError)
 		return nil, createError
 	}
 

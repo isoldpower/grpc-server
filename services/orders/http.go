@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"fmt"
 	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/server"
@@ -47,9 +48,17 @@ func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 
 // Run bootstraps the orders HTTP server with desired logging
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {
-	log.Processln("Running %s Orders HTTP server...", log.GetIcon(log.BoxIcon))
+	log.Processln(
+		"Running %s Orders HTTP server at %s",
+		log.GetIcon(log.BoxIcon),
+		color.Green(fmt.Sprintf("%s:%d", hs.basicConfig.Host, hs.basicConfig.Port)),
+	)
 	log.RaiseLog(func() {
-		log.Logln("%s Press %s to exit", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
+		log.Logln(
+			"%s Press %s to exit",
+			log.GetIcon(log.AttentionIcon),
+			color.Red("Ctrl+C"),
+		)
 	})
 
 	hs.registerRoutes()

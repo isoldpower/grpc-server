@@ -19,7 +19,7 @@ func (oh *OrdersHttpHandler) tryCreateOrder(
 	context context.Context,
 ) (bool, *orders.Order) {
 	order := &orders.Order{
-		OrderID:    42,
+		ID:         42,
 		CustomerID: request.CustomerID,
 		ProductID:  request.ProductID,
 		Quantity:   request.Quantity,

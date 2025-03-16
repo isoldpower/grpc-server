@@ -25,14 +25,13 @@ func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, _ *http.Req
 		Quantity:   10,
 	}
 
-	response, err := oh.service.CreateOrder(request)
-	if err != nil {
+	if response, err := oh.service.CreateOrder(request); err != nil {
 		util.WriteError(writer, http.StatusInternalServerError, err)
-	}
-
-	writeError := util.WriteResponse(writer, http.StatusOK, response)
-	if writeError != nil {
-		util.WriteError(writer, http.StatusInternalServerError, writeError)
+	} else {
+		writeError := util.WriteResponse(writer, http.StatusOK, response)
+		if writeError != nil {
+			util.WriteError(writer, http.StatusInternalServerError, writeError)
+		}
 	}
 }
 
