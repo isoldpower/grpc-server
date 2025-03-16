@@ -55,7 +55,7 @@ func createDatabaseConfig() *database.Config {
 		log.Warnln("DB_PORT not set. Falling back to %d", dbPort)
 	}
 	if dbUsername == "" {
-		dbHost = "postgres"
+		dbUsername = "postgres"
 		log.Warnln("DB_USERNAME environment variable not set. Falling back to %s", dbUsername)
 	}
 	if dbPassword == "" {
