@@ -36,9 +36,8 @@ func (p *PostgresDatabase[T]) AddItem(item *T) (error, bool) {
 
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 	query := fmt.Sprintf(
-		"INSERT INTO %s (id, customerId, productId, quantity) VALUES (%s, %d, %d, %d)",
+		"INSERT INTO %s (customerId, productId, quantity) VALUES (%d, %d, %d)",
 		"orders",
-		order.GetID(),
 		order.GetCustomerID(),
 		order.GetProductID(),
 		order.GetQuantity(),
@@ -60,9 +59,46 @@ func (p *PostgresDatabase[T]) RemoveItem(id string) (error, bool) {
 }
 
 func (p *PostgresDatabase[T]) ListItems(from int, to int) ([]*T, bool) {
-	log.Infoln("Get from database")
-	// Get from database
-	return []*T{}, true
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := fmt.Sprintf(
+		"SELECT * FROM orders LIMIT %d OFFSET %d",
+		to-from+1,
+		from,
+	)
+
+	rows, err := p.database.Database.QueryContext(ctx, query)
+	if err != nil {
+		log.Errorln("Error querying database: %v", err)
+		return nil, false
+	}
+
+	defer rows.Close()
+	var items []IndexedOrder
+	for rows.Next() {
+		item := IndexedOrder{Order: &orders.Order{}}
+		err := rows.Scan(&item.Order.ID, &item.CustomerID, &item.Quantity, &item.ProductID)
+		if err != nil {
+			log.Errorln("Error scanning row: %v", err)
+			return nil, false
+		}
+
+		items = append(items, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Errorln("Error during row iteration: %v", err)
+		return nil, false
+	}
+
+	log.Debugln("Retrieved %d items from database", len(items))
+	parsedItems := make([]*T, len(items))
+	for i, item := range items {
+		parsed := any(item).(T)
+		parsedItems[i] = &parsed
+	}
+	return parsedItems, true
 }
 
 func (p *PostgresDatabase[T]) UpdateItem(item *T) (error, bool) {

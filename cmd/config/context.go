@@ -15,11 +15,7 @@ type ProcessContext struct {
 	RootDir   string
 }
 
-func resolveExecutionProcessContext(args []string) string {
-	if len(args) > 0 {
-		return args[0]
-	}
-
+func resolveExecutionProcessContext() string {
 	var executionFile string
 	if exe, err := os.Executable(); err == nil && !strings.HasPrefix(exe, os.TempDir()) {
 		if sym, err := filepath.EvalSymlinks(exe); err == nil {
@@ -51,7 +47,7 @@ func NewProcessContext() *ProcessContext {
 func (c *ProcessContext) ResolveProcessContext(args []string) error {
 	var errorMessage error
 
-	executionProcessContext := resolveExecutionProcessContext(args)
+	executionProcessContext := resolveExecutionProcessContext()
 	sourceDir := util.ResolvePath(filepath.Dir(""), "")
 	targetDir := util.ResolvePath(executionProcessContext, "")
 	rootDir := util.RootPath()

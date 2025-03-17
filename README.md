@@ -52,4 +52,3 @@ go run main.go orders migrate
 2) write project usage manual (manual usage, cmd usage)
 3) write tests
 4) minimize goroutines memory leak
-5) add title to HTTP and gRPC servers
