@@ -52,11 +52,6 @@ ALTER TABLE orders
 -- +goose Down
 -- +goose StatementBegin
 
--- drop foreign key constraints
--- ALTER TABLE orders
---     DROP CONSTRAINT orders_customerId_fkey,
---     DROP CONSTRAINT orders_productId_fkey;
-
 -- convert orders back to VARCHAR(255)
 ALTER TABLE orders
     ALTER COLUMN id TYPE VARCHAR(255) USING (id::TEXT),
@@ -74,12 +69,5 @@ ALTER TABLE customers
     ALTER COLUMN id TYPE VARCHAR(255) USING (id::TEXT);
 ALTER TABLE customers
     ALTER COLUMN id DROP DEFAULT;
-
--- re-add foreign key constraints
--- ALTER TABLE orders
---     ADD CONSTRAINT orders_customerId_fkey FOREIGN KEY (customerId) REFERENCES customers(id)
---         ON DELETE CASCADE ON UPDATE CASCADE,
---     ADD CONSTRAINT orders_productId_fkey FOREIGN KEY (productId) REFERENCES products(id)
---         ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- +goose StatementEnd
