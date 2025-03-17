@@ -7,43 +7,27 @@ import (
 	"golang-grpc/internal/log"
 	"golang-grpc/services/common/genproto/orders"
 	"golang-grpc/services/orders/types"
-	"strconv"
 	"time"
 
 	databaseTypes "golang-grpc/internal/database/types"
 )
 
-type IndexedOrder struct {
-	*orders.Order
-}
-
-func (io IndexedOrder) GetID() string {
-	return strconv.Itoa(int(io.ID))
-}
-
-type PostgresDatabase[T types.IndexedStoreItem] struct {
+type PostgresDatabase struct {
 	process  databaseTypes.Service
 	database *database.Database
 }
 
-func (p *PostgresDatabase[T]) AddItem(item *T) (error, bool) {
-	var order IndexedOrder
-	if parsed, ok := any(*item).(IndexedOrder); ok == false {
-		return fmt.Errorf("item is not IndexedOrder"), false
-	} else {
-		order = parsed
-	}
-
+func (p *PostgresDatabase) AddItem(item *orders.Order) (error, bool) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-	query := fmt.Sprintf(
-		"INSERT INTO %s (customerId, productId, quantity) VALUES (%d, %d, %d)",
-		"orders",
-		order.GetCustomerID(),
-		order.GetProductID(),
-		order.GetQuantity(),
-	)
+	query := "INSERT INTO orders (customerId, productId, quantity) VALUES ($1, $2, $3)"
 
-	if result, err := p.database.Database.ExecContext(ctx, query); err == nil {
+	if result, err := p.database.Database.ExecContext(
+		ctx,
+		query,
+		item.CustomerID,
+		item.ProductID,
+		item.Quantity,
+	); err == nil {
 		affected, _ := result.RowsAffected()
 		log.Debugln("AddItem finished with %d affected rows", affected)
 		return nil, true
@@ -52,13 +36,13 @@ func (p *PostgresDatabase[T]) AddItem(item *T) (error, bool) {
 	}
 }
 
-func (p *PostgresDatabase[T]) RemoveItem(id string) (error, bool) {
+func (p *PostgresDatabase) RemoveItem(id string) (error, bool) {
 	log.Infoln("Remove from database")
 	// Remove from database
 	return nil, true
 }
 
-func (p *PostgresDatabase[T]) ListItems(from int, to int) ([]*T, bool) {
+func (p *PostgresDatabase) ListItems(from int, to int) ([]*orders.Order, bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -73,18 +57,17 @@ func (p *PostgresDatabase[T]) ListItems(from int, to int) ([]*T, bool) {
 		log.Errorln("Error querying database: %v", err)
 		return nil, false
 	}
-
 	defer rows.Close()
-	var items []IndexedOrder
+
+	var items []*orders.Order
 	for rows.Next() {
-		item := IndexedOrder{Order: &orders.Order{}}
-		err := rows.Scan(&item.Order.ID, &item.CustomerID, &item.Quantity, &item.ProductID)
-		if err != nil {
-			log.Errorln("Error scanning row: %v", err)
+		item := orders.Order{}
+		if err := rows.Scan(&item.ID, &item.CustomerID, &item.Quantity, &item.ProductID); err != nil {
+			log.PrintError("Error scanning row", err)
 			return nil, false
 		}
 
-		items = append(items, item)
+		items = append(items, &item)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -93,40 +76,35 @@ func (p *PostgresDatabase[T]) ListItems(from int, to int) ([]*T, bool) {
 	}
 
 	log.Debugln("Retrieved %d items from database", len(items))
-	parsedItems := make([]*T, len(items))
-	for i, item := range items {
-		parsed := any(item).(T)
-		parsedItems[i] = &parsed
-	}
-	return parsedItems, true
+	return items, true
 }
 
-func (p *PostgresDatabase[T]) UpdateItem(item *T) (error, bool) {
+func (p *PostgresDatabase) UpdateItem(item *orders.Order) (error, bool) {
 	log.Infoln("Update item")
 	// Update item
 	return nil, true
 }
 
-func (p *PostgresDatabase[T]) OverwriteItem(item *T) (error, bool) {
+func (p *PostgresDatabase) OverwriteItem(item *orders.Order) (error, bool) {
 	log.Infoln("Overwrite item")
 	// Overwrite item
 	return nil, true
 }
 
-func (p *PostgresDatabase[T]) GetItem(id string) (*T, bool) {
+func (p *PostgresDatabase) GetItem(id string) (*orders.Order, bool) {
 	log.Infoln("Get Item")
 	// Get Item
 	return nil, true
 }
 
-func NewPostgresStorage(config *database.Config) types.IndexedObjectStore[IndexedOrder] {
+func NewPostgresStorage(config *database.Config) types.ObjectStore[orders.Order] {
 	instance := database.NewDatabase(config)
 	process, err := instance.Instantiate()
 	if err != nil {
 		panic(err)
 	}
 
-	return &PostgresDatabase[IndexedOrder]{
+	return &PostgresDatabase{
 		database: instance,
 		process:  process,
 	}

@@ -20,9 +20,9 @@ func NewOrdersHttpHandler() *OrdersHttpHandler {
 
 func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, _ *http.Request) {
 	request := &orders.CreateOrderRequest{
-		CustomerID: 32,
-		ProductID:  1,
-		Quantity:   10,
+		CustomerID: "0dacf448-068e-4182-ab9d-89537b43cb2e",
+		ProductID:  "a568a8da-613f-4bc0-b10b-e645656562fa",
+		Quantity:   2,
 	}
 
 	if response, err := oh.service.CreateOrder(request); err != nil {
@@ -37,7 +37,7 @@ func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, _ *http.Req
 
 func (oh *OrdersHttpHandler) GetOrders(writer http.ResponseWriter, _ *http.Request) {
 	request := &orders.GetOrdersRequest{
-		CustomerID: 32,
+		CustomerID: "0dacf448-068e-4182-ab9d-89537b43cb2e",
 	}
 
 	response, err := oh.service.GetOrdersList(request)

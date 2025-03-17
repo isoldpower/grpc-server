@@ -30,9 +30,8 @@ func (h *OrdersGrpcHandler) CreateOrder(
 ) (*orders.CreateOrderResponse, error) {
 	log.Debugln("Create Order Request", req)
 	order := &orders.Order{
-		ID:         52,
-		CustomerID: 2,
-		ProductID:  1,
+		CustomerID: "0dacf448-068e-4182-ab9d-89537b43cb2e",
+		ProductID:  "a568a8da-613f-4bc0-b10b-e645656562fa",
 		Quantity:   1,
 	}
 

@@ -9,7 +9,7 @@ import (
 )
 
 type OrderService struct {
-	storage types.IndexedObjectStore[storage.IndexedOrder]
+	storage types.ObjectStore[orders.Order]
 }
 
 func NewOrderService() *OrderService {
@@ -23,9 +23,7 @@ func (s *OrderService) CreateOrder(
 	_ context.Context,
 	order *orders.Order,
 ) error {
-	err, _ := s.storage.AddItem(&storage.IndexedOrder{
-		Order: order,
-	})
+	err, _ := s.storage.AddItem(order)
 
 	return err
 }
@@ -40,7 +38,7 @@ func (s *OrderService) GetOrdersList(
 
 	response := make([]*orders.Order, len(listed))
 	for i, item := range listed {
-		response[i] = item.Order
+		response[i] = item
 	}
 
 	return response, nil

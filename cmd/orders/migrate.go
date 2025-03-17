@@ -18,7 +18,7 @@ type MigrateCommand struct {
 }
 
 func NewMigrateCommand(config *Config) *MigrateCommand {
-	availableCommand := []string{"up", "status", "down", "up-by-one", "down-by-one"}
+	availableCommand := []string{"up", "status", "down", "up-by-one"}
 
 	return &MigrateCommand{
 		config: config,
