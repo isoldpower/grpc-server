@@ -33,9 +33,9 @@ func NewOrderService() *OrderService {
 	}
 }
 
-func (og *OrderService) GetOrdersList(request *orders.GetOrdersRequest) (*orders.GetOrdersResponse, error) {
+func (og *OrderService) ListOrders(request *orders.ListOrdersRequest) (*orders.ListOrdersResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	response, err := og.client.GetOrdersList(ctx, request)
+	response, err := og.client.ListOrders(ctx, request)
 
 	cancel()
 	return response, err

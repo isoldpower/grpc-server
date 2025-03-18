@@ -35,7 +35,7 @@ func NewHTTPServer(basicConfig *httpServerConfig) *HTTPServer {
 
 func (hs *HTTPServer) registerRoutes() {
 	hs.server.AddRoute("POST /", hs.handler.CreateOrder)
-	hs.server.AddRoute("GET /", hs.handler.GetOrders)
+	hs.server.AddRoute("GET /", hs.handler.ListOrders)
 }
 
 func (hs *HTTPServer) Run(config server.ServerRunConfig) error {

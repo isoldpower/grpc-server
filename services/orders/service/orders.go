@@ -13,7 +13,6 @@ type OrderService struct {
 }
 
 func NewOrderService() *OrderService {
-	// TODO: Read config from global context
 	return &OrderService{
 		storage: storage.NewPostgresStorage(storage.Config.Database),
 	}
@@ -29,9 +28,11 @@ func (s *OrderService) CreateOrder(
 }
 
 func (s *OrderService) GetOrdersList(
+	limit *uint64,
+	offset *uint64,
 	_ context.Context,
 ) ([]*orders.Order, error) {
-	listed, success := s.storage.ListItems(0, 10)
+	listed, success := s.storage.ListItems(limit, offset)
 	if !success {
 		return []*orders.Order{}, errors.New("failed to list items")
 	}

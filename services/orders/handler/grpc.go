@@ -28,11 +28,10 @@ func (h *OrdersGrpcHandler) CreateOrder(
 	context context.Context,
 	req *orders.CreateOrderRequest,
 ) (*orders.CreateOrderResponse, error) {
-	log.Debugln("Create Order Request", req)
 	order := &orders.Order{
-		CustomerID: "0dacf448-068e-4182-ab9d-89537b43cb2e",
-		ProductID:  "a568a8da-613f-4bc0-b10b-e645656562fa",
-		Quantity:   1,
+		CustomerID: req.CustomerID,
+		ProductID:  req.ProductID,
+		Quantity:   req.Quantity,
 	}
 
 	createError := h.OrdersService.CreateOrder(context, order)
@@ -42,23 +41,36 @@ func (h *OrdersGrpcHandler) CreateOrder(
 	}
 
 	response := &orders.CreateOrderResponse{
-		Status: "success",
+		Status: orders.CreateStatus_ORDER_CREATED,
 	}
 
 	return response, nil
 }
 
-func (h *OrdersGrpcHandler) GetOrdersList(
+func (h *OrdersGrpcHandler) ListOrders(
 	context context.Context,
-	_ *orders.GetOrdersRequest,
-) (*orders.GetOrdersResponse, error) {
-	retrievedOrders, retrieveError := h.OrdersService.GetOrdersList(context)
+	req *orders.ListOrdersRequest,
+) (*orders.ListOrdersResponse, error) {
+	var total uint64 = 5
+
+	retrievedOrders, retrieveError := h.OrdersService.GetOrdersList(req.Offset, req.Limit, context)
 	if retrieveError != nil {
 		return nil, retrieveError
 	}
 
-	response := &orders.GetOrdersResponse{
-		Orders: retrievedOrders,
+	meta := &orders.ListMeta{
+		Total: total,
 	}
+	if req.Offset != nil {
+		meta.Offset = *req.Offset
+	}
+	if req.Limit != nil {
+		meta.Limit = *req.Limit
+	}
+	response := &orders.ListOrdersResponse{
+		Data: retrievedOrders,
+		Meta: meta,
+	}
+
 	return response, nil
 }

@@ -48,7 +48,7 @@ go run main.go orders migrate
 ```
 
 ## Future plans:
-1) add database migration system
-2) write project usage manual (manual usage, cmd usage)
-3) write tests
-4) minimize goroutines memory leak
+1) write project usage manual (manual usage, cmd usage)
+2) write tests
+3) minimize goroutines memory leak (set up tool for memory leak test)
+4) set up tool for live dev server

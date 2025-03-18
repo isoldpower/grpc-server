@@ -7,7 +7,7 @@ import (
 
 type OrderService interface {
 	CreateOrder(context.Context, *orders.Order) error
-	GetOrdersList(ctx context.Context) ([]*orders.Order, error)
+	GetOrdersList(limit *uint64, offset *uint64, ctx context.Context) ([]*orders.Order, error)
 }
 
 type OrdersHandlerType struct {

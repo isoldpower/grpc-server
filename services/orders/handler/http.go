@@ -7,6 +7,7 @@ import (
 	"golang-grpc/services/common/genproto/orders"
 	"golang-grpc/services/orders/types"
 	"net/http"
+	"strconv"
 )
 
 type OrdersHttpHandler struct {
@@ -33,6 +34,19 @@ func (oh *OrdersHttpHandler) tryCreateOrder(
 	return true, order
 }
 
+func (oh *OrdersHttpHandler) tryListOrders(
+	req *orders.ListOrdersRequest,
+	writer http.ResponseWriter,
+	context context.Context,
+) (bool, []*orders.Order) {
+	if listed, listErr := oh.OrdersService.GetOrdersList(req.Limit, req.Offset, context); listErr != nil {
+		util.WriteError(writer, http.StatusInternalServerError, listErr)
+		return false, []*orders.Order{}
+	} else {
+		return true, listed
+	}
+}
+
 // NewHttpOrdersHandler creates an instance of OrdersHttpHandler object
 // with specific predefined values to ensure safe usage and runtime
 func NewHttpOrdersHandler(orderService types.OrderService) *OrdersHttpHandler {
@@ -49,6 +63,7 @@ func NewHttpOrdersHandler(orderService types.OrderService) *OrdersHttpHandler {
 func (oh *OrdersHttpHandler) GetRoutes() []*server.ServerRoute {
 	return []*server.ServerRoute{
 		{Pattern: "POST /orders", Handler: oh.CreateOrder},
+		{Pattern: "GET /orders", Handler: oh.GetOrdersList},
 	}
 }
 
@@ -66,6 +81,41 @@ func (oh *OrdersHttpHandler) CreateOrder(
 
 	if created, order := oh.tryCreateOrder(&requestDto, writer, request.Context()); created {
 		resultErr := util.WriteResponse(writer, http.StatusCreated, order)
+		if resultErr != nil {
+			util.WriteError(writer, http.StatusInternalServerError, resultErr)
+		}
+	}
+}
+
+// GetOrdersList writes gets list of orders
+func (oh *OrdersHttpHandler) GetOrdersList(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	var filters orders.Order
+	if bodyErr := util.ParseBody(request, &filters); bodyErr != nil {
+		util.WriteError(writer, http.StatusBadRequest, bodyErr)
+		return
+	}
+
+	urlParams := request.URL.Query()
+	var limit *uint64 = nil
+	var offset *uint64 = nil
+	if lim, err := strconv.ParseUint(urlParams.Get("limit"), 10, 64); err == nil && lim != 0 {
+		limit = &lim
+	}
+	if off, err := strconv.ParseUint(urlParams.Get("offset"), 10, 64); err == nil && off != 0 {
+		offset = &off
+	}
+
+	requestDto := orders.ListOrdersRequest{
+		Filters: &filters,
+		Limit:   limit,
+		Offset:  offset,
+	}
+
+	if created, order := oh.tryListOrders(&requestDto, writer, request.Context()); created {
+		resultErr := util.WriteResponse(writer, http.StatusOK, order)
 		if resultErr != nil {
 			util.WriteError(writer, http.StatusInternalServerError, resultErr)
 		}

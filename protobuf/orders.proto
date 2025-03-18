@@ -1,10 +1,16 @@
 syntax = "proto3";
+import "general.proto";
 
 option go_package = "golang-grpc/common/orders";
 
+enum CreateStatus {
+  ORDER_CREATED = 0;
+  ORDER_CANCELED = 1;
+}
+
 service OrderService {
   rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse) {}
-  rpc GetOrdersList (GetOrdersRequest) returns (GetOrdersResponse) {}
+  rpc ListOrders (ListOrdersRequest) returns (ListOrdersResponse) {}
 }
 
 message Order {
@@ -20,19 +26,18 @@ message CreateOrderRequest {
   int32 quantity = 3;
 }
 
-enum CreateStatus {
-  ORDER_CREATED = 0;
-  ORDER_CANCELED = 1;
-}
-
 message CreateOrderResponse {
-  string status = 1;
+  CreateStatus status = 1;
+  Order data = 2;
 }
 
-message GetOrdersRequest {
-  string customerID = 1;
+message ListOrdersRequest {
+  optional Order filters = 1;
+  optional uint64 limit = 2;
+  optional uint64 offset = 3;
 }
 
-message GetOrdersResponse {
-  repeated Order orders = 1;
+message ListOrdersResponse {
+  repeated Order data = 1;
+  ListMeta meta = 2;
 }

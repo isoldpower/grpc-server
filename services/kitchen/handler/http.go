@@ -18,11 +18,18 @@ func NewOrdersHttpHandler() *OrdersHttpHandler {
 	}
 }
 
-func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, _ *http.Request) {
+func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, req *http.Request) {
+	var requestBody orders.CreateOrderRequest
+	err := util.ParseBody(req, &requestBody)
+	if err != nil {
+		util.WriteError(writer, http.StatusBadRequest, err)
+		return
+	}
+
 	request := &orders.CreateOrderRequest{
-		CustomerID: "0dacf448-068e-4182-ab9d-89537b43cb2e",
-		ProductID:  "a568a8da-613f-4bc0-b10b-e645656562fa",
-		Quantity:   2,
+		CustomerID: requestBody.CustomerID,
+		ProductID:  requestBody.ProductID,
+		Quantity:   requestBody.Quantity,
 	}
 
 	if response, err := oh.service.CreateOrder(request); err != nil {
@@ -35,12 +42,16 @@ func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, _ *http.Req
 	}
 }
 
-func (oh *OrdersHttpHandler) GetOrders(writer http.ResponseWriter, _ *http.Request) {
-	request := &orders.GetOrdersRequest{
-		CustomerID: "0dacf448-068e-4182-ab9d-89537b43cb2e",
+func (oh *OrdersHttpHandler) ListOrders(writer http.ResponseWriter, req *http.Request) {
+	urlParams := req.URL.Query()
+	var limit = util.GetQueryUint64(urlParams, "limit")
+	var offset = util.GetQueryUint64(urlParams, "offset")
+	request := &orders.ListOrdersRequest{
+		Limit:  limit,
+		Offset: offset,
 	}
 
-	response, err := oh.service.GetOrdersList(request)
+	response, err := oh.service.ListOrders(request)
 	if err != nil {
 		util.WriteError(writer, http.StatusInternalServerError, err)
 		return
