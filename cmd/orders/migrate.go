@@ -2,7 +2,6 @@ package orders
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
@@ -10,6 +9,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 type MigrateCommand struct {
@@ -62,7 +63,7 @@ func run(config *Config, command string) error {
 	gooseCommand := exec.Command("goose", "-dir", migrationDir, "postgres", databaseLine, command)
 	if output, err := gooseCommand.CombinedOutput(); err != nil {
 		log.PrintError("Error running goose on postgres", err)
-		return nil
+		return fmt.Errorf("goose failed: %w\n%s", err, string(output))
 	} else {
 		log.Infoln(string(output))
 		return err

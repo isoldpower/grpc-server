@@ -19,7 +19,8 @@ migrate-kitchen:
 # Commands for generating protobuf code from protobuf folder at different languages
 gen-go:
 	@protoc \
-		--proto_path=./protobuf "orders.proto" \
+		--proto_path=./protobuf \
+		protobuf/*.proto \
 		--go_out=services/common/genproto/orders --go_opt=paths=source_relative \
 		--go-grpc_out=services/common/genproto/orders \
 		--go-grpc_opt=paths=source_relative

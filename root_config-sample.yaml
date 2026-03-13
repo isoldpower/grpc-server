@@ -1,0 +1,6 @@
+# Root CLI configuration
+debug: false
+silent: false
+no-icons: false
+no-colors: false
+skip-clarify: false

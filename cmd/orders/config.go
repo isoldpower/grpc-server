@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -23,31 +24,55 @@ type Config struct {
 	prefix         string
 	serviceConfig  string
 	databaseConfig *config.DatabaseConfig
+	grpcConfig     *config.ServerConfig
+	httpConfig     *config.ServerConfig
 	viperInstance  *viper.Viper
 }
 
 func NewOrdersConfig(rootConfig *config.RootConfig) *Config {
 	viperInstance := viper.New()
 	databaseConfig := config.NewDatabaseConfig(viperInstance)
+	grpcConfig := config.NewServerConfig(viperInstance, "0.0.0.0", 3081, "grpc")
+	httpConfig := config.NewServerConfig(viperInstance, "0.0.0.0", 3082, "http")
 
 	return &Config{
 		Store: &types.InitialConfig{
 			Root:     rootConfig,
 			Database: databaseConfig.Config,
+			GRPC:     grpcConfig.ServerConfig,
+			HTTP:     httpConfig.ServerConfig,
 		},
 
 		prefix:         "",
 		serviceConfig:  filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
 		viperInstance:  viperInstance,
 		databaseConfig: databaseConfig,
+		grpcConfig:     grpcConfig,
+		httpConfig:     httpConfig,
 	}
 }
 
 func NewPrefixedOrdersConfig(rootConfig *config.RootConfig, prefix string) *Config {
-	configInstance := NewOrdersConfig(rootConfig)
-	configInstance.prefix = prefix
+	viperInstance := viper.New()
+	databaseConfig := config.NewDatabaseConfig(viperInstance)
+	grpcConfig := config.NewServerConfig(viperInstance, "0.0.0.0", 3081, fmt.Sprintf("%s-grpc", prefix))
+	httpConfig := config.NewServerConfig(viperInstance, "0.0.0.0", 3082, fmt.Sprintf("%s-http", prefix))
 
-	return configInstance
+	return &Config{
+		Store: &types.InitialConfig{
+			Root:     rootConfig,
+			Database: databaseConfig.Config,
+			GRPC:     grpcConfig.ServerConfig,
+			HTTP:     httpConfig.ServerConfig,
+		},
+
+		prefix:         prefix,
+		serviceConfig:  filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
+		viperInstance:  viperInstance,
+		databaseConfig: databaseConfig,
+		grpcConfig:     grpcConfig,
+		httpConfig:     httpConfig,
+	}
 }
 
 func (oc *Config) RegisterFlags(cmd *cobra.Command) {
@@ -60,6 +85,8 @@ func (oc *Config) RegisterFlags(cmd *cobra.Command) {
 		"change service-specific config path",
 	)
 	oc.databaseConfig.RegisterFlags(cmd)
+	oc.grpcConfig.RegisterFlags(cmd)
+	oc.httpConfig.RegisterFlags(cmd)
 }
 
 func (oc *Config) TryResolveConfig(_ string) error {
@@ -71,9 +98,14 @@ func (oc *Config) TryResolveConfig(_ string) error {
 
 	return nil
 }
-
 func (oc *Config) ResolveFlagsAndArgs(flags *pflag.FlagSet, args []string) error {
 	if err := oc.databaseConfig.ResolveFlagsAndArgs(flags, args); err != nil {
+		return err
+	}
+	if err := oc.grpcConfig.ResolveFlagsAndArgs(flags, args); err != nil {
+		return err
+	}
+	if err := oc.httpConfig.ResolveFlagsAndArgs(flags, args); err != nil {
 		return err
 	}
 

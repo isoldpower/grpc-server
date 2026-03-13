@@ -25,20 +25,14 @@ func (os *OrdersService) ExecuteExternal() {
 func (os *OrdersService) Execute(ready chan<- bool) <-chan bool {
 	storage.Config = os.config
 	var grpcServer server.Server = NewGRPCServer(&gRPCServerConfig{
-		ServerConfig: server.ServerConfig{
-			Host: "localhost",
-			Port: 3081,
-		},
+		ServerConfig: *os.config.GRPC,
 	})
 	var httpServer server.Server = NewHTTPServer(&httpServerConfig{
-		ServerConfig: server.ServerConfig{
-			Host: "localhost",
-			Port: 3082,
-		},
+		ServerConfig: *os.config.HTTP,
 	})
 
 	runList := []server.Server{grpcServer, httpServer}
-	server.RunServersInParallel(runList, server.ServerRunConfig{
+	wg := server.RunServersInParallel(runList, server.ServerRunConfig{
 		WithGracefulShutdown: true,
 		Silent:               true,
 	})
@@ -46,12 +40,8 @@ func (os *OrdersService) Execute(ready chan<- bool) <-chan bool {
 	ready <- true
 	doneChannel := make(chan bool, 1)
 	go func() {
-		select {
-		case doneChannel <- <-grpcServer.GetDoneChannel():
-			break
-		case doneChannel <- <-httpServer.GetDoneChannel():
-			break
-		}
+		wg.Wait()
+		doneChannel <- true
 	}()
 
 	return doneChannel

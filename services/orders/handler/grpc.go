@@ -62,10 +62,10 @@ func (h *OrdersGrpcHandler) ListOrders(
 		Total: total,
 	}
 	if req.Offset != nil {
-		meta.Offset = *req.Offset
+		meta.Offset = req.Offset
 	}
 	if req.Limit != nil {
-		meta.Limit = *req.Limit
+		meta.Limit = req.Limit
 	}
 	response := &orders.ListOrdersResponse{
 		Data: retrievedOrders,

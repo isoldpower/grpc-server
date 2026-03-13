@@ -1,54 +1,77 @@
 # User Manual
 
-## Project structure
+## Project Structure
+The project follows a microservices architecture with a CLI-driven entry point.
+
+- `cmd/`: **CLI Layer**. Contains command definitions and configuration logic.
+  - `config/`: Reusable configuration components (Viper-based).
+  - `kitchen/`: CLI commands for the Kitchen service.
+  - `orders/`: CLI commands for the Orders service.
+- `services/`: **Business Logic**.
+  - `kitchen/`: Implementation of the Kitchen microservice.
+  - `orders/`: Implementation of the Orders microservice.
+  - `common/`: Shared code, gRPC generated code, and types.
+- `internal/`: **Shared Core**. Logging, server abstractions, database utilities, and networking.
+- `protobuf/`: Protocol Buffer definitions.
+- `migrations/`: Database migration files (managed by `goose`).
+
+## Configuration
+The application uses **Viper** for flexible configuration. Settings are resolved in the following priority:
+1. **CLI Flags** (e.g., `--db-host`)
+2. **Environment Variables** (e.g., `DATABASE_HOST`)
+3. **YAML Config Files** (e.g., `root_config.yaml`)
+4. **Defaults** hardcoded in the source code.
+
+### Sample Configuration Files
+Sample files are provided for each component:
+- `root_config-sample.yaml`: Global CLI settings (debug, silent, colors).
+- `services/kitchen/config-sample.yaml`: Kitchen service settings (port, test variables).
+- `services/orders/config-sample.yaml`: Orders service settings (database, gRPC/HTTP ports).
+
+To use them, copy the sample file to a file named `config.yaml` in the respective directory.
+
+### Environment Variable Overrides
+All configuration keys can be overridden via environment variables. Nested keys use underscores as separators:
+- `DATABASE_HOST` overrides `database.host`
+- `ORDERS_HTTP_PORT` overrides `orders.http.port`
+- `KITCHEN_PORT` overrides `kitchen.port`
 
 ## Command Line Interface (CLI)
-The project is driven by the CLI utilizing the Cobra library for easier set up and maintenance. 
-All the commands specifications and other information related **exclusively to CLI** is stored in
-the `./cmd` project folder. <br>
-In fact, this folder is a **view layer** for the CLI, while all the processes occur in 
-the microservice-related folders. See [structure section](#project-structure) for more information.
+The project is driven by a Cobra-based CLI.
 
-### Supported Commands
-Here is the list of supported commands
-
-#### Global flags
-To get detailed information on the commands, you can always use the
-following structure:
-```
+### Global Flags
+To get help on any command:
+```bash
 go run main.go [command] --help
 ```
 
-#### Help Command
-This command utilizes the default help command defined by `Cobra library`. <br>
-To run this command, use the following line:
+### Main Commands
+- **Run All Services**: `go run main.go run` (orchestrates all microservices).
+- **Service Specific**: `go run main.go [service] run` (e.g., `orders`, `kitchen`).
+- **Migrations**: `go run main.go [service] migrate [ARGS]` (e.g., `go run main.go orders migrate up`).
+
+## Project Management (Makefile)
+Common tasks are simplified via `Makefile`:
+- `make run-all`: Run the entire application.
+- `make migrate-all`: Run migrations for all services.
+- `make run-orders` / `make run-kitchen`: Run specific services.
+- `make gen-go`: Generate Go code from Protobuf.
+
+## Docker Usage
+The project is fully containerized.
+
+### Running with Docker Compose
+To start the entire stack (including Postgres):
 ```bash
-go run main.go --help
+docker compose up --build
 ```
 
-#### Run Command
-This command runs the whole application as a single app in the
-right order so that all the integrations through APIs are being run correctly. <br> 
-To run this command, use the following line:
-```bash
-go run main.go run
-```
+### Exposed Ports
+By default, the following ports are mapped to the host:
+- `8000`: Kitchen HTTP API
+- `3082`: Orders HTTP API
+- `5440`: PostgreSQL Database
 
-#### Service-specific commands
-Those commands target at specific microservice and run commands at a service.
-For example, by using `go run main.go orders run`, you will run only `orders` microservice
-and ignore the possible dependence on other microservices. <br>
-Global pattern:
-```bash
-go run main.go [service] [command]
-```
-Example:
-```bash
-go run main.go orders migrate
-```
-
-## Future plans:
-1) write project usage manual (manual usage, cmd usage)
-2) write tests
-3) minimize goroutines memory leak (set up tool for memory leak test)
-4) set up tool for live dev server
+## Maintenance
+- **Goroutine Management**: The project uses specialized utilities in `internal/util` to prevent goroutine leaks and ensure graceful shutdown.
+- **Logging**: Uses an internal logging system with icon support and debug levels.
