@@ -76,17 +76,21 @@ func NewPrefixedOrdersConfig(rootConfig *config.RootConfig, prefix string) *Conf
 }
 
 func (oc *Config) RegisterFlags(cmd *cobra.Command) {
+	oc.RegisterFlagsForFlagSet(cmd.PersistentFlags())
+}
+
+func (oc *Config) RegisterFlagsForFlagSet(flags *pflag.FlagSet) {
 	applier := util.NewPrefixApplier(oc.prefix)
 
-	cmd.PersistentFlags().StringVar(
+	flags.StringVar(
 		&oc.serviceConfig,
 		applier.WithPrefix(string(ConfigKey)),
 		oc.serviceConfig,
 		"change service-specific config path",
 	)
-	oc.databaseConfig.RegisterFlags(cmd)
-	oc.grpcConfig.RegisterFlags(cmd)
-	oc.httpConfig.RegisterFlags(cmd)
+	oc.databaseConfig.RegisterFlagsForFlagSet(flags)
+	oc.grpcConfig.RegisterFlagsForFlagSet(flags)
+	oc.httpConfig.RegisterFlagsForFlagSet(flags)
 }
 
 func (oc *Config) TryResolveConfig(_ string) error {

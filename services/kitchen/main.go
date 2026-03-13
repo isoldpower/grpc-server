@@ -16,8 +16,6 @@ func NewKitchenService(config *store.InitialConfig) *KitchenService {
 }
 
 func (ks *KitchenService) ExecuteExternal() {
-	ks.config = &store.InitialConfig{}
-
 	ready := make(chan bool, 1)
 	done := ks.Execute(ready)
 	<-done

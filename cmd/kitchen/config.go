@@ -63,21 +63,25 @@ func NewPrefixedKitchenConfig(rootConfig *config.RootConfig, prefix string) *Con
 }
 
 func (oc *Config) RegisterFlags(cmd *cobra.Command) {
+	oc.RegisterFlagsForFlagSet(cmd.PersistentFlags())
+}
+
+func (oc *Config) RegisterFlagsForFlagSet(flags *pflag.FlagSet) {
 	applier := util.NewPrefixApplier(oc.prefix)
 
-	cmd.PersistentFlags().StringVar(
+	flags.StringVar(
 		&oc.serviceConfig,
 		applier.WithPrefix(string(ConfigKey)),
 		oc.serviceConfig,
 		"change service-specific config path",
 	)
-	cmd.PersistentFlags().StringVar(
+	flags.StringVar(
 		&oc.Store.Test,
 		applier.WithPrefix(string(TestConfigKey)),
 		oc.Store.Test,
 		"just test variable",
 	)
-	oc.serverConfig.RegisterFlags(cmd)
+	oc.serverConfig.RegisterFlagsForFlagSet(flags)
 }
 
 func (oc *Config) TryResolveConfig(_ string) error {

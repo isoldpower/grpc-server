@@ -35,7 +35,8 @@ func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, req *http.R
 	if response, err := oh.service.CreateOrder(request); err != nil {
 		util.WriteError(writer, http.StatusInternalServerError, err)
 	} else {
-		writeError := util.WriteResponse(writer, http.StatusOK, response)
+		// Return newly created resource info
+		writeError := util.WriteResponse(writer, http.StatusOK, response.Data)
 		if writeError != nil {
 			util.WriteError(writer, http.StatusInternalServerError, writeError)
 		}
@@ -44,8 +45,16 @@ func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, req *http.R
 
 func (oh *OrdersHttpHandler) ListOrders(writer http.ResponseWriter, req *http.Request) {
 	urlParams := req.URL.Query()
-	var limit = util.GetQueryUint64(urlParams, "limit")
-	var offset = util.GetQueryUint64(urlParams, "offset")
+	limit := util.GetQueryUint64(urlParams, "limit")
+	if limit == nil {
+		defaultLimit := uint64(10)
+		limit = &defaultLimit
+	}
+	offset := util.GetQueryUint64(urlParams, "offset")
+	if offset == nil {
+		defaultOffset := uint64(0)
+		offset = &defaultOffset
+	}
 	request := &orders.ListOrdersRequest{
 		Limit:  limit,
 		Offset: offset,
@@ -57,8 +66,29 @@ func (oh *OrdersHttpHandler) ListOrders(writer http.ResponseWriter, req *http.Re
 		return
 	}
 
-	writeError := util.WriteResponse(writer, http.StatusOK, response)
+	// Use consistent data/metadata structure
+	metadata := &util.Metadata{
+		Total: response.Meta.Total,
+	}
+	if limit != nil {
+		metadata.Limit = limit
+	}
+	if offset != nil {
+		metadata.Offset = offset
+	}
+
+	data := response.Data
+	if data == nil {
+		data = []*orders.Order{}
+	}
+
+	wrappedResponse := &util.ResponseWrapper{
+		Data:     data,
+		Metadata: metadata,
+	}
+
+	writeError := util.WriteResponse(writer, http.StatusOK, wrappedResponse)
 	if writeError != nil {
-		util.WriteError(writer, http.StatusInternalServerError, err)
+		util.WriteError(writer, http.StatusInternalServerError, writeError)
 	}
 }

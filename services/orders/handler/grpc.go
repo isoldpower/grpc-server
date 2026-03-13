@@ -42,6 +42,27 @@ func (h *OrdersGrpcHandler) CreateOrder(
 
 	response := &orders.CreateOrderResponse{
 		Status: orders.CreateStatus_ORDER_CREATED,
+		Data:   order,
+	}
+
+	return response, nil
+}
+
+func (h *OrdersGrpcHandler) CreateCustomer(
+	context context.Context,
+	req *orders.CreateCustomerRequest,
+) (*orders.CreateCustomerResponse, error) {
+	customer := &orders.Customer{
+		Name: req.Name,
+	}
+
+	createError := h.OrdersService.CreateCustomer(context, customer)
+	if createError != nil {
+		return nil, createError
+	}
+
+	response := &orders.CreateCustomerResponse{
+		Data: customer,
 	}
 
 	return response, nil
@@ -51,9 +72,7 @@ func (h *OrdersGrpcHandler) ListOrders(
 	context context.Context,
 	req *orders.ListOrdersRequest,
 ) (*orders.ListOrdersResponse, error) {
-	var total uint64 = 5
-
-	retrievedOrders, retrieveError := h.OrdersService.GetOrdersList(req.Offset, req.Limit, context)
+	retrievedOrders, total, retrieveError := h.OrdersService.GetOrdersList(req.Limit, req.Offset, context)
 	if retrieveError != nil {
 		return nil, retrieveError
 	}
@@ -69,6 +88,58 @@ func (h *OrdersGrpcHandler) ListOrders(
 	}
 	response := &orders.ListOrdersResponse{
 		Data: retrievedOrders,
+		Meta: meta,
+	}
+
+	return response, nil
+}
+
+func (h *OrdersGrpcHandler) ListCustomers(
+	context context.Context,
+	req *orders.ListCustomersRequest,
+) (*orders.ListCustomersResponse, error) {
+	retrievedCustomers, total, retrieveError := h.OrdersService.GetCustomersList(req.Limit, req.Offset, context)
+	if retrieveError != nil {
+		return nil, retrieveError
+	}
+
+	meta := &orders.ListMeta{
+		Total: total,
+	}
+	if req.Offset != nil {
+		meta.Offset = req.Offset
+	}
+	if req.Limit != nil {
+		meta.Limit = req.Limit
+	}
+	response := &orders.ListCustomersResponse{
+		Data: retrievedCustomers,
+		Meta: meta,
+	}
+
+	return response, nil
+}
+
+func (h *OrdersGrpcHandler) ListProducts(
+	context context.Context,
+	req *orders.ListProductsRequest,
+) (*orders.ListProductsResponse, error) {
+	retrievedProducts, total, retrieveError := h.OrdersService.GetProductsList(req.Limit, req.Offset, context)
+	if retrieveError != nil {
+		return nil, retrieveError
+	}
+
+	meta := &orders.ListMeta{
+		Total: total,
+	}
+	if req.Offset != nil {
+		meta.Offset = req.Offset
+	}
+	if req.Limit != nil {
+		meta.Limit = req.Limit
+	}
+	response := &orders.ListProductsResponse{
+		Data: retrievedProducts,
 		Meta: meta,
 	}
 

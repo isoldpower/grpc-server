@@ -25,6 +25,17 @@ func WriteError(writer http.ResponseWriter, statusCode int, err error) {
 	}
 }
 
+type Metadata struct {
+	Total  uint64  `json:"total"`
+	Limit  *uint64 `json:"limit,omitempty"`
+	Offset *uint64 `json:"offset,omitempty"`
+}
+
+type ResponseWrapper struct {
+	Data     any       `json:"data"`
+	Metadata *Metadata `json:"metadata,omitempty"`
+}
+
 func WriteResponse(writer http.ResponseWriter, statusCode int, result interface{}) error {
 	writer.WriteHeader(statusCode)
 	writer.Header().Set("Content-Type", "application/json")

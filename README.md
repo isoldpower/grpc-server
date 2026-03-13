@@ -66,12 +66,97 @@ To start the entire stack (including Postgres):
 docker compose up --build
 ```
 
-### Exposed Ports
+### Microservices Overview
+
+The project consists of two main microservices that interact to handle order processing.
+
+### Orders Service
+- **Role**: Manages the core order lifecycle and persists data to the PostgreSQL database.
+- **Endpoints**:
+    - **HTTP (Port 3082)**:
+        - `POST /orders`: Create a new order.
+        - `GET /orders`: List existing orders (supports `limit` and `offset` query parameters).
+        - `POST /customers`: Create a new customer (requires `name`).
+        - `GET /customers`: List existing customers.
+        - `POST /products`: Create a new product (requires `title` and `description`).
+        - `GET /products`: List existing products.
+    - **gRPC (Port 3081)**:
+        - `CreateOrder`: Internal endpoint for order creation.
+        - `ListOrders`: Internal endpoint for retrieving orders.
+        - `CreateCustomer`: Internal endpoint for customer creation.
+        - `ListCustomers`: Internal endpoint for retrieving customers.
+        - `CreateProduct`: Internal endpoint for product creation.
+        - `ListProducts`: Internal endpoint for retrieving products.
+
+### Kitchen Service
+- **Role**: Acts as a gateway/orchestrator for kitchen-related operations. It currently proxies order requests to the Orders service via gRPC.
+- **Communication**: Uses **gRPC** to communicate with the Orders service.
+- **Endpoints**:
+    - **HTTP (Port 8000)**:
+        - `POST /orders`: Proxies order creation to the Orders service.
+        - `GET /orders`: Proxies order listing to the Orders service.
+
+## Inter-Service Communication
+
+The following diagram illustrates the communication flow:
+
+```mermaid
+graph TD
+    Client[HTTP Client] -->|HTTP:8000| Kitchen[Kitchen Service]
+    Kitchen -->|gRPC:3081| Orders[Orders Service]
+    Orders -->|SQL:5432| DB[(PostgreSQL)]
+    Client -->|HTTP:3082| Orders
+```
+
+## HTTP Messages
+
+### Create Order (`POST /orders`)
+**Request Body**:
+```json
+{
+  "customer_id": 123,
+  "product_id": 456,
+  "quantity": 2
+}
+```
+
+### List Requests (`GET /orders`, `GET /customers`, `GET /products`)
+**Query Parameters**:
+- `limit`: Number of items to return (default: 10).
+- `offset`: Number of items to skip (default: 0).
+
+**Response Structure**:
+```json
+{
+  "data": [...],
+  "metadata": {
+    "total": 100,
+    "limit": 10,
+    "offset": 0
+  }
+}
+```
+
+### Create Customer (`POST /customers`)
+**Request Body**:
+```json
+{
+  "name": "John Doe"
+}
+```
+
+### Create Product (`POST /products`)
+**Request Body**:
+```json
+{
+  "title": "Pizza",
+  "description": "Delicious pepperoni pizza"
+}
+```
+
+## Exposed Ports
 By default, the following ports are mapped to the host:
 - `8000`: Kitchen HTTP API
+- `3081`: Orders gRPC API
 - `3082`: Orders HTTP API
 - `5440`: PostgreSQL Database
-
-## Maintenance
-- **Goroutine Management**: The project uses specialized utilities in `internal/util` to prevent goroutine leaks and ensure graceful shutdown.
-- **Logging**: Uses an internal logging system with icon support and debug levels.

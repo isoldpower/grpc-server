@@ -26,6 +26,10 @@ func NewServerConfig(viperInstance *viper.Viper, host string, port int, prefix s
 }
 
 func (sc *ServerConfig) RegisterFlags(cmd *cobra.Command) {
+	sc.RegisterFlagsForFlagSet(cmd.Flags())
+}
+
+func (sc *ServerConfig) RegisterFlagsForFlagSet(flags *pflag.FlagSet) {
 	hostKey := "host"
 	portKey := "port"
 	if sc.prefix != "" {
@@ -33,8 +37,8 @@ func (sc *ServerConfig) RegisterFlags(cmd *cobra.Command) {
 		portKey = fmt.Sprintf("%s-port", sc.prefix)
 	}
 
-	cmd.Flags().StringVar(&sc.Host, hostKey, sc.Host, "set server host")
-	cmd.Flags().IntVar(&sc.Port, portKey, sc.Port, "set server port")
+	flags.StringVar(&sc.Host, hostKey, sc.Host, "set server host")
+	flags.IntVar(&sc.Port, portKey, sc.Port, "set server port")
 }
 
 func (sc *ServerConfig) ResolveFlagsAndArgs(flags *pflag.FlagSet, _ []string) error {

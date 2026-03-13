@@ -53,12 +53,16 @@ func NewDatabaseConfig(viperInstance *viper.Viper) *DatabaseConfig {
 }
 
 func (dc *DatabaseConfig) RegisterFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&dc.Config.Host, string(HostCliKey), dc.Config.Host, "set database host")
-	cmd.Flags().StringVar(&dc.Config.Database, string(NameCliKey), dc.Config.Database, "set target database name")
-	cmd.Flags().StringVar(&dc.Config.Username, string(UsernameCliKey), dc.Config.Username, "set database username")
-	cmd.Flags().StringVar(&dc.Config.Password, string(PasswordCliKey), dc.Config.Password, "set database access password")
-	cmd.Flags().StringVar(&dc.Config.Schema, string(SchemaCliKey), dc.Config.Schema, "set database search schema")
-	cmd.Flags().IntVar(&dc.Config.Port, string(PortCliKey), dc.Config.Port, "set database port")
+	dc.RegisterFlagsForFlagSet(cmd.Flags())
+}
+
+func (dc *DatabaseConfig) RegisterFlagsForFlagSet(flags *pflag.FlagSet) {
+	flags.StringVar(&dc.Config.Host, string(HostCliKey), dc.Config.Host, "set database host")
+	flags.StringVar(&dc.Config.Database, string(NameCliKey), dc.Config.Database, "set target database name")
+	flags.StringVar(&dc.Config.Username, string(UsernameCliKey), dc.Config.Username, "set database username")
+	flags.StringVar(&dc.Config.Password, string(PasswordCliKey), dc.Config.Password, "set database access password")
+	flags.StringVar(&dc.Config.Schema, string(SchemaCliKey), dc.Config.Schema, "set database search schema")
+	flags.IntVar(&dc.Config.Port, string(PortCliKey), dc.Config.Port, "set database port")
 }
 
 func (dc *DatabaseConfig) ResolveFlagsAndArgs(flags *pflag.FlagSet, _ []string) error {

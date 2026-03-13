@@ -11,6 +11,10 @@ enum CreateStatus {
 service OrderService {
   rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse) {}
   rpc ListOrders (ListOrdersRequest) returns (ListOrdersResponse) {}
+  rpc CreateCustomer (CreateCustomerRequest) returns (CreateCustomerResponse) {}
+  rpc ListCustomers (ListCustomersRequest) returns (ListCustomersResponse) {}
+  rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse) {}
+  rpc ListProducts (ListProductsRequest) returns (ListProductsResponse) {}
 }
 
 message Order {
@@ -18,6 +22,17 @@ message Order {
   string CustomerID = 2;
   string ProductID = 3;
   int32 Quantity = 4;
+}
+
+message Customer {
+  string ID = 1;
+  string Name = 2;
+}
+
+message Product {
+  string ID = 1;
+  string Title = 2;
+  string Description = 3;
 }
 
 message CreateOrderRequest {
@@ -39,5 +54,42 @@ message ListOrdersRequest {
 
 message ListOrdersResponse {
   repeated Order data = 1;
+  ListMeta meta = 2;
+}
+
+message CreateCustomerRequest {
+  string name = 1;
+}
+
+message CreateCustomerResponse {
+  Customer data = 1;
+}
+
+message CreateProductRequest {
+  string title = 1;
+  string description = 2;
+}
+
+message CreateProductResponse {
+  Product data = 1;
+}
+
+message ListCustomersRequest {
+  optional uint64 limit = 1;
+  optional uint64 offset = 2;
+}
+
+message ListCustomersResponse {
+  repeated Customer data = 1;
+  ListMeta meta = 2;
+}
+
+message ListProductsRequest {
+  optional uint64 limit = 1;
+  optional uint64 offset = 2;
+}
+
+message ListProductsResponse {
+  repeated Product data = 1;
   ListMeta meta = 2;
 }
