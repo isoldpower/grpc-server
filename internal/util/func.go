@@ -15,12 +15,19 @@ func ProtectedAction(
 
 func transferRoutine[T any](done <-chan bool, waitGroup *sync.WaitGroup, inputStream <-chan T, outputStream chan<- T) {
 	defer waitGroup.Done()
-	for value := range inputStream {
+	for {
 		select {
 		case <-done:
 			return
-		case outputStream <- value:
-			break
+		case value, ok := <-inputStream:
+			if !ok {
+				return
+			}
+			select {
+			case <-done:
+				return
+			case outputStream <- value:
+			}
 		}
 	}
 }

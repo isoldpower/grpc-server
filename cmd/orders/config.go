@@ -1,12 +1,13 @@
 package orders
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"golang-grpc/cmd/config"
 	"golang-grpc/internal/util"
-	"golang-grpc/services/orders/store"
+	"golang-grpc/services/orders/types"
 	"path/filepath"
 )
 
@@ -18,54 +19,78 @@ const (
 )
 
 type Config struct {
-	Store *store.InitialConfig
+	Store *types.InitialConfig
 
-	prefix        string
-	serviceConfig string
-	viperInstance *viper.Viper
+	prefix         string
+	serviceConfig  string
+	databaseConfig *config.DatabaseConfig
+	grpcConfig     *config.ServerConfig
+	httpConfig     *config.ServerConfig
+	viperInstance  *viper.Viper
 }
 
 func NewOrdersConfig(rootConfig *config.RootConfig) *Config {
+	viperInstance := viper.New()
+	databaseConfig := config.NewDatabaseConfig(viperInstance)
+	grpcConfig := config.NewServerConfig(viperInstance, "0.0.0.0", 3081, "grpc")
+	httpConfig := config.NewServerConfig(viperInstance, "0.0.0.0", 3082, "http")
+
 	return &Config{
-		Store: &store.InitialConfig{
-			Root: rootConfig,
-			Test: "default",
+		Store: &types.InitialConfig{
+			Root:     rootConfig,
+			Database: databaseConfig.Config,
+			GRPC:     grpcConfig.ServerConfig,
+			HTTP:     httpConfig.ServerConfig,
 		},
 
-		prefix:        "",
-		serviceConfig: filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
-		viperInstance: viper.New(),
+		prefix:         "",
+		serviceConfig:  filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
+		viperInstance:  viperInstance,
+		databaseConfig: databaseConfig,
+		grpcConfig:     grpcConfig,
+		httpConfig:     httpConfig,
 	}
 }
 
 func NewPrefixedOrdersConfig(rootConfig *config.RootConfig, prefix string) *Config {
+	viperInstance := viper.New()
+	databaseConfig := config.NewDatabaseConfig(viperInstance)
+	grpcConfig := config.NewServerConfig(viperInstance, "0.0.0.0", 3081, fmt.Sprintf("%s-grpc", prefix))
+	httpConfig := config.NewServerConfig(viperInstance, "0.0.0.0", 3082, fmt.Sprintf("%s-http", prefix))
+
 	return &Config{
-		Store: &store.InitialConfig{
-			Root: rootConfig,
-			Test: "default",
+		Store: &types.InitialConfig{
+			Root:     rootConfig,
+			Database: databaseConfig.Config,
+			GRPC:     grpcConfig.ServerConfig,
+			HTTP:     httpConfig.ServerConfig,
 		},
 
-		prefix:        prefix,
-		serviceConfig: filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
-		viperInstance: viper.New(),
+		prefix:         prefix,
+		serviceConfig:  filepath.Join(rootConfig.Context.RootDir, "services", "orders", "config.yaml"),
+		viperInstance:  viperInstance,
+		databaseConfig: databaseConfig,
+		grpcConfig:     grpcConfig,
+		httpConfig:     httpConfig,
 	}
 }
 
 func (oc *Config) RegisterFlags(cmd *cobra.Command) {
+	oc.RegisterFlagsForFlagSet(cmd.PersistentFlags())
+}
+
+func (oc *Config) RegisterFlagsForFlagSet(flags *pflag.FlagSet) {
 	applier := util.NewPrefixApplier(oc.prefix)
 
-	cmd.PersistentFlags().StringVar(
+	flags.StringVar(
 		&oc.serviceConfig,
 		applier.WithPrefix(string(ConfigKey)),
 		oc.serviceConfig,
 		"change service-specific config path",
 	)
-	cmd.PersistentFlags().StringVar(
-		&oc.Store.Test,
-		applier.WithPrefix(string(TestConfigKey)),
-		oc.Store.Test,
-		"just test variable",
-	)
+	oc.databaseConfig.RegisterFlagsForFlagSet(flags)
+	oc.grpcConfig.RegisterFlagsForFlagSet(flags)
+	oc.httpConfig.RegisterFlagsForFlagSet(flags)
 }
 
 func (oc *Config) TryResolveConfig(_ string) error {
@@ -77,11 +102,16 @@ func (oc *Config) TryResolveConfig(_ string) error {
 
 	return nil
 }
-
-func (oc *Config) ResolveFlagsAndArgs(flags *pflag.FlagSet, _ []string) error {
-	var resolver config.ParamReader = config.NewDualReader(oc.viperInstance, flags)
-
-	oc.Store.Test = resolver.SafeGetString(string(TestConfigKey), oc.Store.Test)
+func (oc *Config) ResolveFlagsAndArgs(flags *pflag.FlagSet, args []string) error {
+	if err := oc.databaseConfig.ResolveFlagsAndArgs(flags, args); err != nil {
+		return err
+	}
+	if err := oc.grpcConfig.ResolveFlagsAndArgs(flags, args); err != nil {
+		return err
+	}
+	if err := oc.httpConfig.ResolveFlagsAndArgs(flags, args); err != nil {
+		return err
+	}
 
 	return nil
 }

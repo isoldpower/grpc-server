@@ -5,6 +5,7 @@ import (
 	"golang-grpc/cmd/config"
 	kitchenCmd "golang-grpc/cmd/kitchen"
 	ordersCmd "golang-grpc/cmd/orders"
+	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/util"
 	"golang-grpc/services/common/types"
@@ -20,17 +21,18 @@ type RunCommand struct {
 }
 
 func (rc *RunCommand) runServicesInOrder(globalDone chan bool) {
+	defer close(globalDone)
 	ready := make(chan bool)
 	defer close(ready)
 	doneChannels := make([]<-chan bool, len(rc.services))
 
 	iterator := 0
 	for key, service := range rc.services {
-		go func() {
-			log.Infoln("Running %s service", key)
+		go func(k string, i int, s types.Service) {
+			log.Infoln("Running %s service", k)
 			log.IncreaseLevel()
-			doneChannels[iterator] = service.Execute(ready)
-		}()
+			doneChannels[i] = s.Execute(ready)
+		}(key, iterator, service)
 		<-ready
 		log.DecreaseLevel()
 		iterator++
@@ -38,10 +40,7 @@ func (rc *RunCommand) runServicesInOrder(globalDone chan bool) {
 	log.Logln("\n")
 
 	finalStream := util.FlatStreams(globalDone, doneChannels...)
-	select {
-	case globalDone <- <-finalStream:
-		break
-	}
+	globalDone <- <-finalStream
 }
 
 func NewRunCommand(rootConfig *config.RootConfig) *RunCommand {
@@ -86,7 +85,7 @@ func NewRunCommand(rootConfig *config.RootConfig) *RunCommand {
 			})
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			log.Infoln("Executed run-all command")
+			log.Infoln("Executed %s command", color.Underline("run-all"))
 			log.Debugln("Resolved kitchen config: %s", log.GetObjectPattern(kitchenConfig.Store))
 			log.Debugln("Resolved orders config: %s", log.GetObjectPattern(ordersConfig.Store))
 

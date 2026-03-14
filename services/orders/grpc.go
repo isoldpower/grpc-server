@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"fmt"
 	"golang-grpc/internal/color"
 	"golang-grpc/internal/log"
 	"golang-grpc/internal/server"
@@ -50,9 +51,17 @@ func (s *GRPCServer) GetServingChannel() <-chan bool {
 // Run starts the server to listen and handle at specific port.
 // Returns possible server run process error
 func (s *GRPCServer) Run(config server.ServerRunConfig) error {
-	log.Processln("Running %s Orders gRPC server...", log.GetIcon(log.BoxIcon))
+	log.Processln(
+		"Running %s Orders gRPC server at %s",
+		log.GetIcon(log.BoxIcon),
+		color.Green(fmt.Sprintf("%s:%d", s.basicConfig.Host, s.basicConfig.Port)),
+	)
 	log.RaiseLog(func() {
-		log.Logln("%s Press %s to exit", log.GetIcon(log.AttentionIcon), color.Red("Ctrl+C"))
+		log.Logln(
+			"%s Press %s to exit",
+			log.GetIcon(log.AttentionIcon),
+			color.Red("Ctrl+C"),
+		)
 	})
 
 	s.registerServices()

@@ -16,12 +16,10 @@ type RootCommand struct {
 	commandInstance *cobra.Command
 }
 
-var currentCommand = NewCommand()
-
 func NewCommand() *RootCommand {
 	rootConfig := config.NewRootConfig()
 
-	return &RootCommand{
+	rootCommand := &RootCommand{
 		rootConfig: rootConfig,
 		commandInstance: &cobra.Command{
 			Use:     "power",
@@ -34,30 +32,30 @@ func NewCommand() *RootCommand {
 			},
 			Run: func(cmd *cobra.Command, args []string) {
 				log.Infoln("Executed root command")
-				log.Debugln("Resolved config: %s\n", log.GetObjectPattern(rootConfig))
+				cmd.HelpFunc()(cmd, args)
 			},
 		},
 	}
-}
 
-func init() {
-	currentCommand.rootConfig.RegisterFlags(currentCommand.commandInstance)
+	rootCommand.rootConfig.RegisterFlags(rootCommand.commandInstance)
 
 	subcommands := []types.SubCommand{
-		NewRunCommand(currentCommand.rootConfig),
-		orders.NewRootCommand(currentCommand.rootConfig),
-		kitchen.NewRootCommand(currentCommand.rootConfig),
+		NewRunCommand(rootCommand.rootConfig),
+		orders.NewRootCommand(rootCommand.rootConfig),
+		kitchen.NewRootCommand(rootCommand.rootConfig),
 	}
 
 	for _, subcommand := range subcommands {
-		subcommand.Register(currentCommand.commandInstance)
+		subcommand.Register(rootCommand.commandInstance)
 	}
+
+	return rootCommand
 }
 
 // Execute is an entry-point function to start the CLI interactions
 func (c *RootCommand) Execute() error {
-	if err := currentCommand.commandInstance.Execute(); err != nil {
-		_, err := fmt.Fprintln(os.Stderr, err)
+	if err := c.commandInstance.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		log.Errorln(err.Error())
 		return err
 	}

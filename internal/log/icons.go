@@ -4,9 +4,10 @@ type Icon string
 
 const (
 	GearIcon      Icon = "⚙️"
-	BanIcon       Icon = "🚫"
+	BanIcon       Icon = "🚫 "
 	CheckIcon     Icon = "✅  "
-	RocketIcon    Icon = "🚀"
+	RocketIcon    Icon = "🚀 "
+	WarnIcon      Icon = "⚠️ "
 	PencilIcon    Icon = "✏️ "
 	TerminateIcon Icon = "💥"
 	BoxIcon       Icon = "📦"

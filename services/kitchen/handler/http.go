@@ -18,37 +18,77 @@ func NewOrdersHttpHandler() *OrdersHttpHandler {
 	}
 }
 
-func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, _ *http.Request) {
-	request := &orders.CreateOrderRequest{
-		CustomerID: 32,
-		ProductID:  1,
-		Quantity:   10,
-	}
-
-	response, err := oh.service.CreateOrder(request)
+func (oh *OrdersHttpHandler) CreateOrder(writer http.ResponseWriter, req *http.Request) {
+	var requestBody orders.CreateOrderRequest
+	err := util.ParseBody(req, &requestBody)
 	if err != nil {
-		util.WriteError(writer, http.StatusInternalServerError, err)
+		util.WriteError(writer, http.StatusBadRequest, err)
+		return
 	}
 
-	writeError := util.WriteResponse(writer, http.StatusOK, response)
-	if writeError != nil {
-		util.WriteError(writer, http.StatusInternalServerError, writeError)
+	request := &orders.CreateOrderRequest{
+		CustomerID: requestBody.CustomerID,
+		ProductID:  requestBody.ProductID,
+		Quantity:   requestBody.Quantity,
+	}
+
+	if response, err := oh.service.CreateOrder(request); err != nil {
+		util.WriteError(writer, http.StatusInternalServerError, err)
+	} else {
+		// Return newly created resource info
+		writeError := util.WriteResponse(writer, http.StatusOK, response.Data)
+		if writeError != nil {
+			util.WriteError(writer, http.StatusInternalServerError, writeError)
+		}
 	}
 }
 
-func (oh *OrdersHttpHandler) GetOrders(writer http.ResponseWriter, _ *http.Request) {
-	request := &orders.GetOrdersRequest{
-		CustomerID: 32,
+func (oh *OrdersHttpHandler) ListOrders(writer http.ResponseWriter, req *http.Request) {
+	urlParams := req.URL.Query()
+	limit := util.GetQueryUint64(urlParams, "limit")
+	if limit == nil {
+		defaultLimit := uint64(10)
+		limit = &defaultLimit
+	}
+	offset := util.GetQueryUint64(urlParams, "offset")
+	if offset == nil {
+		defaultOffset := uint64(0)
+		offset = &defaultOffset
+	}
+	request := &orders.ListOrdersRequest{
+		Limit:  limit,
+		Offset: offset,
 	}
 
-	response, err := oh.service.GetOrdersList(request)
+	response, err := oh.service.ListOrders(request)
 	if err != nil {
 		util.WriteError(writer, http.StatusInternalServerError, err)
 		return
 	}
 
-	writeError := util.WriteResponse(writer, http.StatusOK, response)
+	// Use consistent data/metadata structure
+	metadata := &util.Metadata{
+		Total: response.Meta.Total,
+	}
+	if limit != nil {
+		metadata.Limit = limit
+	}
+	if offset != nil {
+		metadata.Offset = offset
+	}
+
+	data := response.Data
+	if data == nil {
+		data = []*orders.Order{}
+	}
+
+	wrappedResponse := &util.ResponseWrapper{
+		Data:     data,
+		Metadata: metadata,
+	}
+
+	writeError := util.WriteResponse(writer, http.StatusOK, wrappedResponse)
 	if writeError != nil {
-		util.WriteError(writer, http.StatusInternalServerError, err)
+		util.WriteError(writer, http.StatusInternalServerError, writeError)
 	}
 }

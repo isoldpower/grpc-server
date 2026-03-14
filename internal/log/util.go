@@ -14,6 +14,7 @@ const (
 	LogTypeSuccess LogType = LogType(CheckIcon)
 	LogTypeProcess LogType = LogType(RocketIcon)
 	LogTypeInfo    LogType = LogType(PencilIcon)
+	LogTypeWarn    LogType = LogType(WarnIcon)
 	LogTypeDefault LogType = ""
 )
 

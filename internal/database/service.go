@@ -11,7 +11,7 @@ import (
 
 type service struct {
 	db       *sql.DB
-	settings Config
+	settings *Config
 }
 
 // Health checks the health of the database connection by pinging the database.

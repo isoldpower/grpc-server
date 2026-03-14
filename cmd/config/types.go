@@ -14,4 +14,5 @@ type CommandConfig interface {
 type ParamReader interface {
 	SafeGetString(key string, current string) string
 	SafeGetBool(key string, current bool) bool
+	SafeGetInt(key string, current int) int
 }
