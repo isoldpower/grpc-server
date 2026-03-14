@@ -154,9 +154,7 @@ graph TD
 }
 ```
 
-## Exposed Ports
-By default, the following ports are mapped to the host:
-- `8000`: Kitchen HTTP API
-- `3081`: Orders gRPC API
-- `3082`: Orders HTTP API
-- `5440`: PostgreSQL Database
+## Future plans:
+1) minimize goroutines memory leak :white_check_mark:
+2) add title to HTTP and gRPC servers :white_check_mark:
+3) set up database connection :white_check_mark:
